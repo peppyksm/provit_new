@@ -37,7 +37,9 @@ out/
 # 2. 빌드 결과물 및 캐시
 # ==========================================
 
-# Java / Maven
+# Java / Gradle (target/ retains ignored outputs from the previous Maven build)
+.gradle/
+**/.gradle/
 target/
 **/target/
 build/
@@ -46,6 +48,7 @@ bin/
 **/bin/
 *.class
 *.jar
+!backend/gradle/wrapper/gradle-wrapper.jar
 *.war
 *.ear
 

@@ -12,7 +12,8 @@
 | **WAS**             | Apache Tomcat          | **9.0.x** 권장                                |
 | **Java**            | OpenJDK / Oracle JDK   | **JDK 17**                                    |
 | **Database**        | Oracle Database        | **Oracle 19c** (ojdbc8, MyBatis, HikariCP)    |
-| **Backend IDE**     | Eclipse / STS          | Dynamic Web Module 4.0, Maven                 |
+| **Build**           | Gradle Wrapper         | **8.14.3**, WAR 패키징                        |
+| **Backend IDE**     | Eclipse / STS          | Gradle Buildship, Dynamic Web Module 4.0      |
 | **Frontend**        | React 19 + Vite        | JavaScript, Axios, React Router, Lucide Icons |
 | **Frontend IDE**    | Visual Studio Code     | ESLint, Prettier                              |
 | **협업 & 형상관리** | Git / GitHub           | Git-Flow (PR & Code Review 기반)              |
@@ -38,27 +39,42 @@
 
 ```bash
 git clone <저장소 URL>
-cd provit
+cd provit_new
 git checkout develop
 ```
 
 ---
 
-### 2. 백엔드 (Backend - Eclipse) 세팅
+### 2. 백엔드 (Backend - Gradle) 세팅
 
-> ⚠️ **주의**: `.project`, `.classpath`는 Git에 포함되지 않습니다. 반드시 **Maven Project**로 가져와야 라이브러리와 JDK 17이 자동 세팅됩니다.
+Java 17로 빌드합니다. `JAVA_HOME`을 JDK 17로 지정하고, 저장소에 포함된 **Gradle Wrapper**를 사용하세요. Gradle을 별도로 설치할 필요는 없으며 첫 실행에는 배포본과 의존성을 내려받을 인터넷 연결이 필요합니다.
 
-1. **프로젝트 Import**:
-   - 이클립스 실행 → `File` → `Import...` 클릭
-   - `Maven` → `Existing Maven Projects` 선택 후 `Next`
-   - `Root Directory`에서 `provit/backend` 폴더 선택 후 `Finish`
+1. **프로젝트 Import** (Eclipse / STS 사용 시):
+   - Gradle Buildship이 설치된 Eclipse에서 `File` → `Import...` → `Gradle` → `Existing Gradle Project` 선택
+   - `Project root directory`에서 `provit_new/backend` 폴더 선택
+   - Gradle 배포 방식은 `Gradle Wrapper`, Java Home은 JDK 17로 설정 후 `Finish`
+   - 과거 Maven 프로젝트가 IDE에 남아 있으면 디스크 파일은 유지한 채 IDE에서 제거하고 다시 가져옵니다.
 2. **DB 및 외부 API 설정 파일 생성 (필독)**:
-   - 최상위에 있는 **`database 및 api properties.txt`** 파일을 열어 내용을 확인합니다.
+   - **`backend/src/main/resources/database 및 api properties.txt`** 파일을 열어 내용을 확인합니다.
    - `backend/src/main/resources/` 위치에 아래 2개 파일을 생성하고 본인의 정보를 입력합니다:
      - **`database.properties`**: Oracle 19c 계정 및 접속 URL
      - **`api.properties`**: OpenAI, 채용공고, 운세 등 외부 API 키
        _(두 파일 모두 `.gitignore`에 등록되어 있어 Git에 올라가지 않으므로 반드시 직접 생성해야 합니다)_
-3. **톰캣 9 서버 연동 및 Context Path 설정 (매우 중요)**:
+3. **빌드 및 테스트** (저장소 루트에서 PowerShell 실행):
+
+   ```powershell
+   cd backend
+   .\gradlew.bat clean build
+   ```
+
+   - macOS / Linux: `sh ./gradlew clean build`
+   - 결과: `backend/build/libs/backend.war`
+   - 테스트 보고서: `backend/build/reports/tests/test/index.html`
+   - 기본 테스트는 실제 외부 사주 API 호출 테스트 2개 클래스를 제외합니다. Oracle 테스트는 기존처럼 별도 옵션으로 활성화합니다. [개별 테스트 실행 및 전환 범위](docs/gradle-migration.md)를 참고하세요.
+
+4. **톰캣 9 서버 연동 및 Context Path 설정 (매우 중요)**:
+   - WAR 배포: `build/libs/backend.war`를 Tomcat의 `webapps/ROOT.war`로 배포하면 `/api` 경로를 유지할 수 있습니다. 기존 ROOT 앱은 먼저 백업하세요.
+   - Eclipse에서 직접 배포하려면 `backend`에서 `.\gradlew.bat eclipse`로 WTP 메타데이터를 생성한 뒤 프로젝트를 새로고침합니다.
    - Eclipse 하단 `Servers` 탭 → `New` → `Server` → `Apache Tomcat v9.0 Server` 추가
    - 추가한 서버에 `backend` 프로젝트를 Add
    - 생성된 Tomcat 서버를 더블클릭하여 설정 창 열기:
@@ -66,7 +82,7 @@ git checkout develop
      - `backend` 모듈 선택 후 `Edit` 클릭
      - **Path를 `/backend`가 아니라 `/` (슬래시 하나)로 변경** 후 저장 (`Ctrl + S`)
        _(Path를 `/`로 설정해야 프론트엔드의 `/api` 요청을 정상 수신합니다)_
-4. **서버 시작**:
+5. **서버 시작**:
    - Tomcat 서버 우클릭 → `Start`
    - 브라우저에서 `http://localhost:8080/api/health` 접속 시 JSON 응답(`"status": "UP"`)이 나오면 성공!
 
@@ -75,7 +91,7 @@ git checkout develop
 ### 3. 프론트엔드 (Frontend - VSCode) 세팅
 
 1. **VSCode로 열기**:
-   - VSCode에서 `provit/frontend` 폴더를 엽니다.
+   - VSCode에서 `provit_new/frontend` 폴더를 엽니다.
    - 우측 하단에 권장 확장 프로그램(ESLint, Prettier) 알림이 뜨면 **[Install All]**을 클릭합니다.
 2. **패키지 설치**:
    ```bash

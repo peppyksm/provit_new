@@ -171,7 +171,7 @@ OFFSET :offset ROWS FETCH NEXT :pageSize ROWS ONLY;
 - 기존 Spring MVC/Tomcat 프로젝트를 다시 빌드·게시한 뒤 프론트의 **AI 첨삭 시작하기** 버튼을 사용한다. API 키는 `api.properties`의 `api.openai.key`에 설정한다.
 - `OpenAiDocumentReviewGeneratorTest`: 로컬 HTTP 서버로 단일 요청·고정 모델/effort, PDF 직접 첨부, 잘못된 형식·인용·직무·페이지·거절·불완전 응답·한도 오류를 검증하며 유료 API를 호출하지 않는다.
 - `DocumentReviewValidationTest`: 필수 번호·기준·200자 제한, 인증 누락, 서류 소유권, 목록 범위를 검증한다.
-- `OracleDocumentReviewPersistenceTest`: 실제 Oracle의 격리 테이블·시퀀스로 결과/JSON/PDF 보관본, 포트폴리오 생략, 과거 조회, 짧은 트랜잭션, 실패 기록·부분 결과 롤백과 REST 반환을 검증한다. 기존 테이블·데이터를 수정하지 않으며 테스트 객체는 종료 시 제거한다. `mvn -Dprovit.oracle.documentReviewTests=true -Dtest=OracleDocumentReviewPersistenceTest test`로 실행한다. 추가로 `-Dprovit.openai.documentReviewTests=true`를 지정하면 합성 문서·PDF로 실제 유료 API 호출 1회와 Oracle 저장·재조회도 실행한다. 기본 실행에서는 외부 API를 호출하지 않는다.
+- `OracleDocumentReviewPersistenceTest`: 실제 Oracle의 격리 테이블·시퀀스로 결과/JSON/PDF 보관본, 포트폴리오 생략, 과거 조회, 짧은 트랜잭션, 실패 기록·부분 결과 롤백과 REST 반환을 검증한다. 기존 테이블·데이터를 수정하지 않으며 테스트 객체는 종료 시 제거한다. `backend` 폴더에서 `.\gradlew.bat "-Dprovit.oracle.documentReviewTests=true" test --tests "*OracleDocumentReviewPersistenceTest" --rerun-tasks`로 실행한다. 추가로 `"-Dprovit.openai.documentReviewTests=true"`를 지정하면 합성 문서·PDF로 실제 유료 API 호출 1회와 Oracle 저장·재조회도 실행한다. 기본 실행에서는 외부 API를 호출하지 않는다.
 
 ## Oracle 참고
 
