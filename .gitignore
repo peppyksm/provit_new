@@ -1,0 +1,107 @@
+# ==========================================
+# 1. 개발 툴 / IDE 설정 파일 (팀원 환경 충돌 방지)
+# ==========================================
+
+# Eclipse / STS
+.metadata/
+.project
+.classpath
+.settings/
+.loadpath
+.recommenders/
+.springBeans
+.sts4-cache/
+.factorypath
+*.launch
+*.sublime*
+**/.project
+**/.classpath
+**/.settings/
+**/.factorypath
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# ==========================================
+# 2. 빌드 결과물 및 캐시
+# ==========================================
+
+# Java / Maven
+target/
+**/target/
+build/
+**/build/
+bin/
+**/bin/
+*.class
+*.jar
+*.war
+*.ear
+
+# Node / Frontend
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ==========================================
+# 3. 민감한 정보 및 환경 변수 파일
+# ==========================================
+
+# AI Assistant 개인 프롬프트 및 역할 설정
+AGENTS.md
+**/AGENTS.md
+
+# Backend (DB 접속정보, API Key 등)
+**/database.properties
+**/api.properties
+**/apiKey.properties
+**/application-secret.properties
+**/application-secret.yml
+
+# Frontend (환경변수)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+
+# ==========================================
+# 4. 운영체제 (OS) 생성 파일
+# ==========================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.stackdump
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
