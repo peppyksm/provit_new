@@ -46,7 +46,7 @@ public class ResumeJobMapperTest {
         assertTrue(mappings.stream().anyMatch(p -> p.getProperty().equals("jobCode")
                 && p.getColumn().equals("JOB_CODE")));
 
-        // 코드를 선택하지 않은 기존 화면도 Oracle에 타입을 지정한 NULL을 전달한다.
+        // 코드를 선택하지 않은 기존 화면도 PostgreSQL에 타입을 지정한 NULL을 전달한다.
         var insert = configuration.getMappedStatement("com.provit.mapper.UserMapper.insertUser")
                 .getBoundSql(new UserDTO());
         for (String property : new String[] { "occupationCode", "jobCode" }) {

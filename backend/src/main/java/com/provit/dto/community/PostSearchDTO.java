@@ -22,7 +22,7 @@ public class PostSearchDTO {
     private int pageSize = 10;   // 한 페이지당 노출할 게시글 수 (기본 10개)
 
     /**
-     * Oracle 12c+ 페이징 처리를 위한 OFFSET 자동 계산
+     * SQL 페이징 처리를 위한 OFFSET 자동 계산
      * 쿼리: OFFSET #{offset} ROWS FETCH NEXT #{pageSize} ROWS ONLY 에 사용됩니다.
      */
     public int getOffset() {

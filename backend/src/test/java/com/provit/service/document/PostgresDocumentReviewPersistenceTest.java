@@ -23,7 +23,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 
 import org.apache.ibatis.builder.xml.XMLMapperBuilder;
 import org.apache.ibatis.mapping.Environment;
@@ -69,11 +69,12 @@ import com.provit.dto.document.ResumeDetailDTO;
 import com.provit.service.document.impl.DocumentReviewServiceImpl;
 import com.provit.util.jwt.JwtProvider;
 
-public class OracleDocumentReviewPersistenceTest {
+public class PostgresDocumentReviewPersistenceTest {
 	private final String prefix = "DRT" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase();
 	private final Map<String, String> names = new LinkedHashMap<>();
 	private final List<String[]> objects = new ArrayList<>();
 	private Connection connection;
+    private com.provit.support.PostgresTestDatabase database;
 	private TransactionTemplate transaction;
 	private DocumentReviewDAO dao;
 	private DocumentReviewService service;
@@ -86,46 +87,18 @@ public class OracleDocumentReviewPersistenceTest {
 
 	@Before
 	public void setUp() throws Exception {
-		Assume.assumeTrue("Opt in with -Dprovit.oracle.documentReviewTests=true",
-				Boolean.getBoolean("provit.oracle.documentReviewTests"));
-		var properties = new Properties();
-		try (var reader = Files.newBufferedReader(Path.of("src/main/resources/database.properties"),
-				StandardCharsets.UTF_8)) {
-			properties.load(reader);
-		}
-		var dataSource = new DriverManagerDataSource();
-		dataSource.setUrl(properties.getProperty("db.url"));
-		dataSource.setUsername(properties.getProperty("db.username"));
-		dataSource.setPassword(properties.getProperty("db.password"));
-		var settings = new Properties();
-		settings.setProperty("oracle.net.CONNECT_TIMEOUT", "5000");
-		settings.setProperty("oracle.jdbc.ReadTimeout", "10000");
-		dataSource.setConnectionProperties(settings);
-		connection = dataSource.getConnection();
-		String ddl = "CREATE TABLE T_USER (USER_NUM NUMBER(9) PRIMARY KEY);\n"
-				+ resource("/sql_query/document_review_schema.sql");
-		var matcher = Pattern.compile("\\b(?:SEQ_T_|T_|FK_|CK_|UQ_|IDX_|PK_)[A-Z_]+\\b").matcher(ddl);
-		while (matcher.find())
-			names.computeIfAbsent(matcher.group(), key -> prefix + "_" + names.size());
-		ddl = isolatedSql(ddl);
-		matcher = Pattern.compile("CREATE (TABLE|SEQUENCE) (\\w+)").matcher(ddl);
-		while (matcher.find())
-			objects.add(new String[] { matcher.group(1), matcher.group(2) });
-		ScriptUtils.executeSqlScript(connection, new EncodedResource(
-				new ByteArrayResource(ddl.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
-		try (var statement = connection.createStatement()) {
-			statement.executeUpdate("INSERT INTO " + names.get("T_USER") + " (USER_NUM) VALUES (7)");
-			statement.executeUpdate("INSERT INTO " + names.get("T_USER") + " (USER_NUM) VALUES (8)");
-		}
-		var configuration = new Configuration(
-				new Environment("review-test", new SpringManagedTransactionFactory(), dataSource));
-		configuration.setMapUnderscoreToCamelCase(true);
-		String xml = isolatedSql(resource("/mappers/document/document_review_mapper.xml"));
-		try (var reader = new java.io.StringReader(xml)) {
-			new XMLMapperBuilder(reader, configuration, "review-test-mapper", configuration.getSqlFragments()).parse();
-		}
-		sessionFactory = new SqlSessionFactoryBuilder().build(configuration);
-		dao = new DocumentReviewDAOImpl(new SqlSessionTemplate(sessionFactory));
+		database = com.provit.support.PostgresTestDatabase.open();
+        connection = database.connection;
+        for (String table : List.of("T_USER", "T_DOCUMENT_REVIEW", "T_REVIEW_DOCUMENT", "T_REVIEW_STRENGTH",
+                "T_REVIEW_IMPROVEMENT", "T_REVIEW_CONSISTENCY", "T_REVIEW_SOURCE")) names.put(table, table);
+        var dataSource = database.dataSource;
+        try (var statement = connection.createStatement()) {
+            for (int user : List.of(7, 8)) statement.executeUpdate("INSERT INTO T_USER "
+                    + "(USER_NUM, USER_NAME, USER_NICKNAME, USER_EMAIL, USER_PW) VALUES (" + user
+                    + ", 'test', 'user" + user + "', 'review" + user + "@example.invalid', 'placeholder')");
+        }
+        sessionFactory = database.factory;
+        dao = new DocumentReviewDAOImpl(new SqlSessionTemplate(sessionFactory));
 		transactionManager = new DataSourceTransactionManager(dataSource);
 		transaction = new TransactionTemplate(transactionManager);
 		resume = new ResumeDetailDTO();
@@ -177,31 +150,9 @@ public class OracleDocumentReviewPersistenceTest {
 	}
 
 	@After
-	public void dropOnlyIsolatedObjects() throws Exception {
-		if (connection == null)
-			return;
-		try (var testConnection = connection) {
-			var reverse = new ArrayList<>(objects);
-			Collections.reverse(reverse);
-			for (String[] object : reverse) {
-				assertTrue(object[1].startsWith(prefix + "_"));
-				try (var query = testConnection.prepareStatement(
-						"SELECT COUNT(*) FROM USER_OBJECTS WHERE OBJECT_NAME = ? AND OBJECT_TYPE = ?")) {
-					query.setString(1, object[1]);
-					query.setString(2, object[0]);
-					try (var rows = query.executeQuery()) {
-						rows.next();
-						if (rows.getInt(1) == 0)
-							continue;
-					}
-				}
-				try (var statement = testConnection.createStatement()) {
-					statement.execute(
-							"DROP " + object[0] + " " + object[1] + ("TABLE".equals(object[0]) ? " PURGE" : ""));
-				}
-			}
-		}
-	}
+    public void dropOnlyIsolatedSchema() throws Exception {
+        if (database != null) database.close();
+    }
 
 	@Test
 	public void storesEntireResponseSnapshotsAndTwoHundredCharacterRequests() throws Exception {
@@ -369,16 +320,13 @@ public class OracleDocumentReviewPersistenceTest {
 	}
 
 	@Test
-	public void concurrentAuthenticatedRequestsReuseOneOracleRecordAndGenerateOnce() throws Exception {
+	public void concurrentAuthenticatedRequestsReuseOnePostgresRecordAndGenerateOnce() throws Exception {
 		assertConcurrentAuthenticatedRequests(dao);
 	}
 
 	@Test
 	public void concurrentRequestsAlsoReuseRecordWithSqlStateExceptionTranslation() throws Exception {
-		// SQL-state fallback classifies Oracle ORA-00001 as
-		// DataIntegrityViolationException,
-		// rather than DuplicateKeyException. Exercise the real failing insert, not a
-		// fake DAO.
+		// Exercise the real PostgreSQL 23505 error through the SQL-state translator.
 		var translator = new MyBatisExceptionTranslator(SQLStateSQLExceptionTranslator::new, true);
 		var fallbackDAO = new DocumentReviewDAOImpl(
 				new SqlSessionTemplate(sessionFactory, ExecutorType.SIMPLE, translator));
@@ -695,7 +643,7 @@ public class OracleDocumentReviewPersistenceTest {
 			assertFalse(strength.getSuggestion().isBlank());
 		}
 		assertEquals(saved, service.getReview(7, saved.getReviewNum()));
-		System.out.println("Live OpenAI + Oracle: completed, saved, reread; one synthetic request.");
+		System.out.println("Live OpenAI + Postgres: completed, saved, reread; one synthetic request.");
 	}
 
 	private void assertCounts(int... expected) {

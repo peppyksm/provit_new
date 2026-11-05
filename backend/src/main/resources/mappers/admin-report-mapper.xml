@@ -5,7 +5,7 @@
 
     <!-- 1. 신고 목록 페이징 조회 -->
     <select id="selectReportList" parameterType="map" resultType="com.provit.dto.admin.AdminReportDTO">
-        SELECT 
+        SELECT
             R.REPORT_NUM as reportNum,
             R.REPORTER_NUM as reporterNum,
             U.USER_NICKNAME as reporterNickname,
@@ -14,11 +14,11 @@
             R.REPORT_REASON as reportReason,
             R.REPORT_STATUS as reportStatus,
             R.REPORT_DATE as reportDate,
-            NVL(
-                CASE 
+            COALESCE(
+                CASE
                     WHEN R.TARGET_TYPE = 'POST' THEN SUBSTR(P.POST_TITLE, 1, 50)
                     WHEN R.TARGET_TYPE = 'COMMENT' THEN SUBSTR(C.COMMENT_CONTENT, 1, 50)
-                END, 
+                END,
                 '내용 없음 (삭제됨)'
             ) as targetContentPreview,
             C.POST_NUM as commentPostNum
@@ -37,14 +37,14 @@
 
     <!-- 관리자 여부 확인 -->
     <select id="isAdmin" parameterType="long" resultType="int">
-        SELECT COUNT(*) 
-        FROM T_USER 
+        SELECT COUNT(*)
+        FROM T_USER
         WHERE USER_NUM = #{userNum} AND USER_TYPE = 'ADMIN'
     </select>
 
     <!-- 2. 신고 건수 카운트 -->
     <select id="selectReportCount" parameterType="map" resultType="int">
-        SELECT COUNT(*) 
+        SELECT COUNT(*)
         FROM T_REPORT
         <where>
             <if test="status != null and status != ''">
@@ -55,7 +55,7 @@
 
     <!-- 3. 단일 신고 상세 조회 -->
     <select id="selectReportDetail" parameterType="long" resultType="com.provit.dto.admin.AdminReportDTO">
-        SELECT 
+        SELECT
             R.REPORT_NUM as reportNum,
             R.REPORTER_NUM as reporterNum,
             R.TARGET_TYPE as targetType,

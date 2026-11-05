@@ -1,6 +1,6 @@
 # 🚀 Provit (프로빗) 팀 프로젝트
 
-> **Spring Framework (MVC) & React 19 기반 풀스택 팀 프로젝트**
+> **Spring Boot & React 19 기반 풀스택 팀 프로젝트**
 
 ---
 
@@ -8,12 +8,12 @@
 
 | 구분                | 기술 / 도구            | 상세 버전 및 스펙                             |
 | :------------------ | :--------------------- | :-------------------------------------------- |
-| **Backend**         | Spring Framework (MVC) | **5.3.39** (JDK 17 호환)                      |
-| **WAS**             | Apache Tomcat          | **9.0.x** 권장                                |
+| **Backend**         | Spring Boot            | **4.1.2** (Spring Framework 7.0.10)            |
+| **WAS**             | 내장 Apache Tomcat     | **11.0.x**, 별도 설치 없이 실행                |
 | **Java**            | OpenJDK / Oracle JDK   | **JDK 17**                                    |
-| **Database**        | Oracle Database        | **Oracle 19c** (ojdbc8, MyBatis, HikariCP)    |
-| **Build**           | Gradle Wrapper         | **8.14.3**, WAR 패키징                        |
-| **Backend IDE**     | Eclipse / STS          | Gradle Buildship, Dynamic Web Module 4.0      |
+| **Database**        | PostgreSQL             | **18**, pgJDBC, MyBatis, HikariCP             |
+| **Build**           | Gradle Wrapper         | **8.14.3**, 실행 가능한 JAR                   |
+| **Backend IDE**     | Eclipse / STS / IntelliJ | Gradle 프로젝트                           |
 | **Frontend**        | React 19 + Vite        | JavaScript, Axios, React Router, Lucide Icons |
 | **Frontend IDE**    | Visual Studio Code     | ESLint, Prettier                              |
 | **협업 & 형상관리** | Git / GitHub           | Git-Flow (PR & Code Review 기반)              |
@@ -26,10 +26,9 @@
 
 1. **JDK 17** (환경 변수 `JAVA_HOME` 등록 확인)
 2. **Node.js LTS (v20.x 이상 권장)**
-3. **Oracle 19c** (DB 인스턴스 실행 및 계정 생성)
+3. **PostgreSQL 18** (서버 실행, 앱 전용 계정 및 DB 생성)
 4. **Eclipse IDE for Enterprise Java and Web Developers** (또는 STS)
-5. **Apache Tomcat 9.0.x**
-6. **Visual Studio Code**
+5. **Visual Studio Code**
 
 ---
 
@@ -57,7 +56,7 @@ Java 17로 빌드합니다. `JAVA_HOME`을 JDK 17로 지정하고, 저장소에 
 2. **DB 및 외부 API 설정 파일 생성 (필독)**:
    - **`backend/src/main/resources/database 및 api properties.txt`** 파일을 열어 내용을 확인합니다.
    - `backend/src/main/resources/` 위치에 아래 2개 파일을 생성하고 본인의 정보를 입력합니다:
-     - **`database.properties`**: Oracle 19c 계정 및 접속 URL
+     - **`database.properties`**: PostgreSQL 계정 및 접속 URL (`database.properties.example` 참고)
      - **`api.properties`**: OpenAI, 채용공고, 운세 등 외부 API 키
        _(두 파일 모두 `.gitignore`에 등록되어 있어 Git에 올라가지 않으므로 반드시 직접 생성해야 합니다)_
 3. **빌드 및 테스트** (저장소 루트에서 PowerShell 실행):
@@ -68,23 +67,23 @@ Java 17로 빌드합니다. `JAVA_HOME`을 JDK 17로 지정하고, 저장소에 
    ```
 
    - macOS / Linux: `sh ./gradlew clean build`
-   - 결과: `backend/build/libs/backend.war`
+   - 결과: `backend/build/libs/backend.jar`
    - 테스트 보고서: `backend/build/reports/tests/test/index.html`
-   - 기본 테스트는 실제 외부 사주 API 호출 테스트 2개 클래스를 제외합니다. Oracle 테스트는 기존처럼 별도 옵션으로 활성화합니다. [개별 테스트 실행 및 전환 범위](docs/gradle-migration.md)를 참고하세요.
+   - 기본 테스트는 실제 외부 사주 API 호출 테스트 2개 클래스를 제외합니다. PostgreSQL 통합 검증은 `.\gradlew.bat "-Dprovit.postgres.tests=true" test`로 활성화합니다.
+   - 새 DB 구성·기준정보·접속 설정은 [PostgreSQL 전환 안내](docs/postgresql-migration.md)를 참고하세요.
 
-4. **톰캣 9 서버 연동 및 Context Path 설정 (매우 중요)**:
-   - WAR 배포: `build/libs/backend.war`를 Tomcat의 `webapps/ROOT.war`로 배포하면 `/api` 경로를 유지할 수 있습니다. 기존 ROOT 앱은 먼저 백업하세요.
-   - Eclipse에서 직접 배포하려면 `backend`에서 `.\gradlew.bat eclipse`로 WTP 메타데이터를 생성한 뒤 프로젝트를 새로고침합니다.
-   - Eclipse 하단 `Servers` 탭 → `New` → `Server` → `Apache Tomcat v9.0 Server` 추가
-   - 추가한 서버에 `backend` 프로젝트를 Add
-   - 생성된 Tomcat 서버를 더블클릭하여 설정 창 열기:
-     - 좌측 하단 **`Modules`** 탭 클릭
-     - `backend` 모듈 선택 후 `Edit` 클릭
-     - **Path를 `/backend`가 아니라 `/` (슬래시 하나)로 변경** 후 저장 (`Ctrl + S`)
-       _(Path를 `/`로 설정해야 프론트엔드의 `/api` 요청을 정상 수신합니다)_
-5. **서버 시작**:
-   - Tomcat 서버 우클릭 → `Start`
-   - 브라우저에서 `http://localhost:8080/api/health` 접속 시 JSON 응답(`"status": "UP"`)이 나오면 성공!
+4. **서버 시작** (`backend` 폴더에서):
+
+   ```powershell
+   .\gradlew.bat bootRun
+   ```
+
+   - 빌드한 파일 실행: `java -jar build/libs/backend.jar`
+   - IDE에서는 `com.provit.ProvitApplication`의 `main`을 실행합니다.
+   - 기본 포트는 8080이며 `/api`, `/uploads` 경로를 사용합니다.
+   - `http://localhost:8080/api/health`에서 HTTP 200과 `responseCode.code: 200`, `data.framework: "Spring Boot 4.1.2"`를 확인합니다.
+   - 서버 기동 시 기존 채용공고 수집이 자동 실행됩니다. 수집·예약 작업을 끄고 기동만 확인하려면 `.\gradlew.bat bootRun --args="--provit.scheduling.enabled=false"`를 사용합니다.
+   - [Spring Boot 전환 범위와 설정 안내](docs/spring-boot-migration.md)
 
 ---
 

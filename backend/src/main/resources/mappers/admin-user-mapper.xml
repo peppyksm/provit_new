@@ -4,7 +4,7 @@
 <mapper namespace="com.provit.mapper.AdminUserMapper">
 
     <select id="selectUserList" parameterType="map" resultType="com.provit.dto.admin.AdminUserDTO">
-        SELECT 
+        SELECT
             USER_NUM as userNum,
             USER_EMAIL as userEmail,
             USER_NAME as userName,
@@ -20,10 +20,10 @@
                 AND (USER_EMAIL LIKE '%' || #{keyword} || '%' OR USER_NICKNAME LIKE '%' || #{keyword} || '%')
             </if>
             <if test="status == 'BLOCKED'">
-                AND BLOCKED_DATE > SYSDATE
+                AND BLOCKED_DATE > LOCALTIMESTAMP
             </if>
             <if test="status == 'ACTIVE'">
-                AND (BLOCKED_DATE IS NULL OR SYSDATE >= BLOCKED_DATE)
+                AND (BLOCKED_DATE IS NULL OR LOCALTIMESTAMP >= BLOCKED_DATE)
             </if>
         </where>
         ORDER BY USER_NUM DESC
@@ -39,10 +39,10 @@
                 AND (USER_EMAIL LIKE '%' || #{keyword} || '%' OR USER_NICKNAME LIKE '%' || #{keyword} || '%')
             </if>
             <if test="status == 'BLOCKED'">
-                AND BLOCKED_DATE > SYSDATE
+                AND BLOCKED_DATE > LOCALTIMESTAMP
             </if>
             <if test="status == 'ACTIVE'">
-                AND (BLOCKED_DATE IS NULL OR SYSDATE >= BLOCKED_DATE)
+                AND (BLOCKED_DATE IS NULL OR LOCALTIMESTAMP >= BLOCKED_DATE)
             </if>
         </where>
     </select>
@@ -54,7 +54,7 @@
                 BLOCKED_DATE = NULL
             </if>
             <if test="blockDays > 0 and blockDays &lt; 9999">
-                BLOCKED_DATE = SYSDATE + #{blockDays}
+                BLOCKED_DATE = LOCALTIMESTAMP + #{blockDays} * INTERVAL '1 day'
             </if>
             <if test="blockDays == 9999">
                 BLOCKED_DATE = TO_DATE('2099-12-31', 'YYYY-MM-DD')

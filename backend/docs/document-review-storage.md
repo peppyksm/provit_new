@@ -1,10 +1,12 @@
 # AI원클릭첨삭 기록 저장 설계
 
+> 현재 DB는 PostgreSQL이다. 신규 구성·SQL·통합 테스트는 [PostgreSQL 전환 안내](../../docs/postgresql-migration.md)를 따른다. 아래 Oracle 증분 적용 기록은 과거 참고 자료다.
+
 현재 결과 화면의 모든 데이터는 6개 테이블에 저장한다. 한 번의 통합 첨삭을 `REVIEW_NUM`으로 묶고, 같은 서류를 다시 첨삭하면 새로운 기록을 만든다. 완료된 기록은 원본 문서 변경에 따라 덮어쓰지 않는다.
 
 ## 요청 ID와 중복 실행 방지
 
-기존 DB에는 배포 전에 [migrate_document_review_request_id.sql](../src/main/resources/sql_query/migrate_document_review_request_id.sql)을 적용해야 한다. 신규 `schema.sql`과 첨삭 전용 DDL에는 같은 컬럼·인덱스가 포함되어 있다. 이 작업에서 실제 Oracle DB에는 실행하지 않았다.
+기존 DB에는 배포 전에 [migrate_document_review_request_id.sql](../../docs/legacy/oracle/migrate_document_review_request_id.sql)을 적용해야 한다. 신규 `schema.sql`과 첨삭 전용 DDL에는 같은 컬럼·인덱스가 포함되어 있다. 이 작업에서 실제 Oracle DB에는 실행하지 않았다.
 
 `POST /api/document-reviews`는 UUID 형식의 `requestId`가 필수다. 서버는 소유자와 요청 ID로 기존 기록을 먼저 찾고, 같은 문서 번호·기준·추가 요청이면 `PROCESSING`, `COMPLETED`, `FAILED` 중 현재 상태와 저장된 결과를 반환한다. 원본 문서가 변경·삭제되어도 다시 읽거나 AI를 호출하지 않는다. 같은 ID의 조건이 달라지면 HTTP 409를 반환한다. 실패한 요청을 새로 실행하려면 사용자가 새 첨삭을 준비해 새로운 ID를 발급받아야 한다.
 
@@ -171,7 +173,7 @@ OFFSET :offset ROWS FETCH NEXT :pageSize ROWS ONLY;
 - 기존 Spring MVC/Tomcat 프로젝트를 다시 빌드·게시한 뒤 프론트의 **AI 첨삭 시작하기** 버튼을 사용한다. API 키는 `api.properties`의 `api.openai.key`에 설정한다.
 - `OpenAiDocumentReviewGeneratorTest`: 로컬 HTTP 서버로 단일 요청·고정 모델/effort, PDF 직접 첨부, 잘못된 형식·인용·직무·페이지·거절·불완전 응답·한도 오류를 검증하며 유료 API를 호출하지 않는다.
 - `DocumentReviewValidationTest`: 필수 번호·기준·200자 제한, 인증 누락, 서류 소유권, 목록 범위를 검증한다.
-- `OracleDocumentReviewPersistenceTest`: 실제 Oracle의 격리 테이블·시퀀스로 결과/JSON/PDF 보관본, 포트폴리오 생략, 과거 조회, 짧은 트랜잭션, 실패 기록·부분 결과 롤백과 REST 반환을 검증한다. 기존 테이블·데이터를 수정하지 않으며 테스트 객체는 종료 시 제거한다. `backend` 폴더에서 `.\gradlew.bat "-Dprovit.oracle.documentReviewTests=true" test --tests "*OracleDocumentReviewPersistenceTest" --rerun-tasks`로 실행한다. 추가로 `"-Dprovit.openai.documentReviewTests=true"`를 지정하면 합성 문서·PDF로 실제 유료 API 호출 1회와 Oracle 저장·재조회도 실행한다. 기본 실행에서는 외부 API를 호출하지 않는다.
+- `PostgresDocumentReviewPersistenceTest`: 실제 PostgreSQL의 별도 임시 스키마에서 결과/JSON/PDF 저장, 과거 조회, 실패 기록·롤백·동시 요청 재사용과 REST 응답을 검증한다. `backend`에서 `.\gradlew.bat "-Dprovit.postgres.tests=true" test --tests "*PostgresDocumentReviewPersistenceTest" --rerun-tasks`로 실행한다. 실제 유료 OpenAI 요청은 별도로 `"-Dprovit.openai.documentReviewTests=true"`까지 켤 때만 실행한다.
 
 ## Oracle 참고
 

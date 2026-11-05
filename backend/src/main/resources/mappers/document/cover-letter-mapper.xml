@@ -7,7 +7,7 @@
 
     <insert id="insertCoverLetter" parameterType="com.provit.dto.document.CoverLetterDTO">
         <selectKey keyProperty="letterNum" resultType="int" order="BEFORE">
-            SELECT SEQ_T_COVER_LETTER.NEXTVAL FROM DUAL
+            SELECT nextval('seq_t_cover_letter')
         </selectKey>
         INSERT INTO T_COVER_LETTER (
             LETTER_NUM,
@@ -27,8 +27,8 @@
             #{personalityStrengthsWeaknesses, jdbcType=VARCHAR},
             #{problemSolvingExperience, jdbcType=VARCHAR},
             #{postJoiningAspiration, jdbcType=VARCHAR},
-            SYSDATE,
-            SYSDATE
+            LOCALTIMESTAMP,
+            LOCALTIMESTAMP
         )
     </insert>
 
@@ -40,7 +40,7 @@
             PERSONALITY_STRENGTHS_WEAKNESSES = #{personalityStrengthsWeaknesses, jdbcType=VARCHAR},
             PROBLEM_SOLVING_EXPERIENCE = #{problemSolvingExperience, jdbcType=VARCHAR},
             POST_JOINING_ASPIRATION = #{postJoiningAspiration, jdbcType=VARCHAR},
-            UPDATED_AT = SYSDATE
+            UPDATED_AT = LOCALTIMESTAMP
         WHERE LETTER_NUM = #{letterNum}
           AND USER_NUM = #{userNum}
     </update>

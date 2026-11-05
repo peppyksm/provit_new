@@ -16,17 +16,16 @@
 backend/src/main/resources/database.properties
 
 [파일 내용 (아래 내용을 복사해서 붙여넣으세요)]
-# Oracle 19c 데이터베이스 접속 정보
-db.driverClassName=oracle.jdbc.OracleDriver
+# PostgreSQL 18 데이터베이스 접속 정보
+db.driverClassName=org.postgresql.Driver
 
-# JDBC URL (팀 공통 Oracle 19c 기본 SID는 orcl 입니다)
+# JDBC URL (팀 공통 PostgreSQL 18 기본 DB 이름은 provit_new 입니다)
 # SID 방식:
-db.url=jdbc:oracle:thin:@localhost:1521:orcl
-# (혹시 본인 로컬 오라클이 서비스명 방식이면: jdbc:oracle:thin:@localhost:1521/orcl)
+db.url=jdbc:postgresql://127.0.0.1:5432/provit_new
 
 # 본인의 오라클 계정 및 비밀번호 입력
-db.username=scott
-db.password=tiger
+db.username=provit
+db.password=CHANGE_ME
 
 # 커넥션 풀 설정
 db.maxPoolSize=10
@@ -79,9 +78,9 @@ file.upload.base-dir=D:/fileStorage_Provit
 2. 이클립스에서 프로젝트 우클릭 -> Gradle -> Refresh Gradle Project 실행합니다.
    명령줄에서는 backend 폴더에서 .\gradlew.bat clean build 로 빌드합니다.
 
-3. Tomcat 9 서버를 시작(Start)하고, 브라우저에서 아래 주소로 접속해 정상 구동을 확인합니다:
+3. backend 폴더에서 .\gradlew.bat bootRun 으로 Spring Boot 서버를 시작하고 정상 구동을 확인합니다:
    http://localhost:8080/api/health
-   -> {"status": "UP", ...} JSON이 나오면 백엔드 준비 완료!
+   -> HTTP 200과 responseCode.code: 200, data.framework: "Spring Boot 4.1.2"를 확인합니다.
 
 4. 문의 사항이 있으시면 기술팀장에게 편하게 말씀해 주세요.
 ================================================================================

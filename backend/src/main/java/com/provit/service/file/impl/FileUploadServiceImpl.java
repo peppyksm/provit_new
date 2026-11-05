@@ -9,7 +9,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Date;
 import java.util.UUID;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.mybatis.spring.SqlSessionTemplate;
 import org.slf4j.Logger;

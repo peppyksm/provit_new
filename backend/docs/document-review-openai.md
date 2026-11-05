@@ -1,5 +1,7 @@
 # 통합 첨삭 단일 OpenAI 요청 설계와 예시
 
+> 현재 DB는 PostgreSQL이다. 신규 구성·SQL·통합 테스트는 [PostgreSQL 전환 안내](../../docs/postgresql-migration.md)를 따른다. 아래 Oracle 증분 적용 기록은 과거 참고 자료다.
+
 2026-09-29 실제 OpenAI Responses API 연결을 구현했다. 모델은 `gpt-6-sol`, `reasoning.effort`는 `medium`으로 고정하며 첨삭과 취업 준비 추천을 한 번의 생성 응답에서 받아 DB에 저장한다. 예시 파일의 응답은 직접 작성한 샘플이다. 응답 구조는 원문 근거와 판단 이유를 포함한 버전 3다.
 
 ## 1. 현재 구현 확인

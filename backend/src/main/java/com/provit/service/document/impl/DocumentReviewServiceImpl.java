@@ -129,11 +129,11 @@ public class DocumentReviewServiceImpl implements DocumentReviewService {
 	private boolean isDuplicateKeyViolation(DataAccessException exception) {
 		if (exception instanceof DuplicateKeyException)
 			return true;
-		// SQL-state fallback may wrap ORA-00001 in a generic integrity exception.
+		// A translator may wrap PostgreSQL's unique violation in a generic exception.
 		for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
 			if (cause instanceof java.sql.SQLException sqlException) {
 				for (var sql = sqlException; sql != null; sql = sql.getNextException()) {
-					if (sql.getErrorCode() == 1)
+					if ("23505".equals(sql.getSQLState()))
 						return true;
 				}
 			}

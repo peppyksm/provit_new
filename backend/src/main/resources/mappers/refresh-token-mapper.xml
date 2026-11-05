@@ -26,6 +26,6 @@
     </delete>
 
     <delete id="deleteExpired">
-        DELETE FROM T_REFRESH_TOKEN WHERE EXPIRES_AT &lt;= SYSTIMESTAMP
+        DELETE FROM T_REFRESH_TOKEN WHERE EXPIRES_AT &lt;= LOCALTIMESTAMP
     </delete>
 </mapper>

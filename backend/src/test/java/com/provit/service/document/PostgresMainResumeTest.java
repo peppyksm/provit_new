@@ -39,13 +39,14 @@ import com.provit.dto.document.MainResumeJobInfoDTO;
 import com.provit.service.document.impl.MainResumeServiceImpl;
 import com.provit.util.jwt.JwtProvider;
 
-public class OracleMainResumeTest {
+public class PostgresMainResumeTest {
     @Rule
     public final TestName testName = new TestName();
     private final String prefix = "MRT" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase();
     private final Map<String, String> names = new LinkedHashMap<>();
     private final List<String> tables = new ArrayList<>();
     private Connection connection;
+    private com.provit.support.PostgresTestDatabase database;
     private SqlSessionTemplate session;
     private MainResumeDAO dao;
     private MainResumeService service;
@@ -53,44 +54,9 @@ public class OracleMainResumeTest {
 
     @Before
     public void setup() throws Exception {
-        Assume.assumeTrue("Opt in with -Dprovit.oracle.mainResumeTests=true",
-                Boolean.getBoolean("provit.oracle.mainResumeTests"));
-        var properties = new Properties();
-        try (var reader = Files.newBufferedReader(Path.of("src/main/resources/database.properties"), StandardCharsets.UTF_8)) {
-            properties.load(reader);
-        }
-        var source = new DriverManagerDataSource(properties.getProperty("db.url"),
-                properties.getProperty("db.username"), properties.getProperty("db.password"));
-        var options = new Properties();
-        options.setProperty("oracle.net.CONNECT_TIMEOUT", "5000");
-        options.setProperty("oracle.jdbc.ReadTimeout", "10000");
-        source.setConnectionProperties(options);
-        connection = source.getConnection();
-        String schema = resource("sql_query/schema.sql");
-        for (String original : List.of("T_OCCUPATION", "T_JOB", "T_USER", "T_RESUME")) {
-            var matcher = Pattern.compile("CREATE TABLE " + original + " \\(.*?\\);", Pattern.DOTALL).matcher(schema);
-            assertTrue(matcher.find());
-            String ddl = matcher.group().replaceAll("DEFAULT SEQ_T_\\w+\\.NEXTVAL", "");
-            if (original.equals("T_USER") && !testName.getMethodName().equals("newSchemaSupportsDesignationAndDeleteReset")) {
-                ddl = ddl.replace("MAIN_RESUME_NUM      NUMBER(18),", "");
-            }
-            execute(ddl.substring(0, ddl.length() - 1));
-            tables.add(names.get(original));
-        }
-        String migration = resource("sql_query/migrate_user_main_resume.sql")
-                .replaceAll("(?m)^--.*$", "").replaceAll("(?m)^/\\s*$", "").trim();
-        if (testName.getMethodName().equals("newSchemaSupportsDesignationAndDeleteReset")) {
-            for (String sqlPattern : List.of("ALTER TABLE T_USER ADD CONSTRAINT FK_USER_MAIN_RESUME.*?;",
-                    "CREATE INDEX IDX_USER_MAIN_RESUME_NUM.*?;")) {
-                var matcher = Pattern.compile(sqlPattern, Pattern.DOTALL).matcher(schema);
-                assertTrue(matcher.find());
-                String ddl = matcher.group();
-                execute(ddl.substring(0, ddl.length() - 1));
-            }
-        } else {
-            execute(migration);
-            execute(migration);
-        }
+        database = com.provit.support.PostgresTestDatabase.open();
+        connection = database.connection;
+        var source = database.dataSource;
         execute("INSERT INTO T_OCCUPATION VALUES ('2','IT개발·데이터')");
         execute("INSERT INTO T_JOB VALUES ('84','2','백엔드/서버개발')");
         for (int userNum : List.of(7, 8)) {
@@ -100,14 +66,7 @@ public class OracleMainResumeTest {
         execute("INSERT INTO T_RESUME (RESUME_NUM,USER_NUM,RESUME_TITLE,HIGHEST_LEVEL,OCCUPATION_CODE,JOB_CODE) VALUES (11,7,'first','대학교','2','84')");
         execute("INSERT INTO T_RESUME (RESUME_NUM,USER_NUM,RESUME_TITLE,HIGHEST_LEVEL) VALUES (3000000000,7,'second','대학교')");
         execute("INSERT INTO T_RESUME (RESUME_NUM,USER_NUM,RESUME_TITLE,HIGHEST_LEVEL) VALUES (22,8,'private','대학교')");
-        var config = new Configuration();
-        config.setEnvironment(new Environment("main-resume-test", new SpringManagedTransactionFactory(), source));
-        for (String path : List.of("mappers/document/main-resume-mapper.xml", "mappers/user-mapper.xml")) {
-            try (var reader = new java.io.StringReader(isolated(resource(path)))) {
-                new XMLMapperBuilder(reader, config, path, config.getSqlFragments()).parse();
-            }
-        }
-        session = new SqlSessionTemplate(new SqlSessionFactoryBuilder().build(config));
+        session = database.session;
         dao = new MainResumeDAOImpl(session);
         transactions = new DataSourceTransactionManager(source);
         service = transactional(dao);
@@ -115,14 +74,7 @@ public class OracleMainResumeTest {
 
     @After
     public void cleanup() throws Exception {
-        if (connection == null) return;
-        try (var closing = connection) {
-            Collections.reverse(tables);
-            for (String table : tables) {
-                assertTrue(table.startsWith(prefix + "_"));
-                execute("DROP TABLE " + table + " CASCADE CONSTRAINTS PURGE");
-            }
-        }
+        if (database != null) database.close();
     }
 
     @Test
@@ -131,12 +83,12 @@ public class OracleMainResumeTest {
                 new Class<?>[] { UserDAO.class }, (proxy, method, args) ->
                     session.selectOne("com.provit.mapper.UserMapper.selectByUserNum", args[0]));
         var jwt = new JwtProvider(users);
-        ReflectionTestUtils.setField(jwt, "secretKeyPlain", "main-resume-oracle-test-key-32-bytes-long");
+        ReflectionTestUtils.setField(jwt, "secretKeyPlain", "main-resume-postgres-test-key-32-bytes-long");
         ReflectionTestUtils.setField(jwt, "expirationTime", 60_000L);
         jwt.init();
         var cookies = new AuthCookieService();
         ReflectionTestUtils.setField(cookies, "cookieName", "provit_access");
-        var cookie = new javax.servlet.http.Cookie("provit_access", jwt.createToken(users.selectByUserNum(7L)));
+        var cookie = new jakarta.servlet.http.Cookie("provit_access", jwt.createToken(users.selectByUserNum(7L)));
         var mvc = MockMvcBuilders.standaloneSetup(new MainResumeController(service))
                 .setCustomArgumentResolvers(new LoginUserArgumentResolver(jwt, cookies))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
@@ -237,7 +189,7 @@ public class OracleMainResumeTest {
 
     private Long storedMainResumeNum() throws Exception {
         try (var statement = connection.createStatement();
-                var rows = statement.executeQuery("SELECT MAIN_RESUME_NUM FROM " + names.get("T_USER") + " WHERE USER_NUM=7")) {
+                var rows = statement.executeQuery("SELECT MAIN_RESUME_NUM FROM " + "T_USER" + " WHERE USER_NUM=7")) {
             assertTrue(rows.next());
             long number = rows.getLong(1);
             return rows.wasNull() ? null : number;
@@ -248,14 +200,7 @@ public class OracleMainResumeTest {
         try (var statement = connection.createStatement()) { statement.execute(isolated(sql)); }
     }
 
-    private String isolated(String text) {
-        var matcher = Pattern.compile("\\b(?:T_|FK_|IDX_)[A-Z_]+\\b").matcher(text);
-        var result = new StringBuffer();
-        while (matcher.find()) matcher.appendReplacement(result,
-                names.computeIfAbsent(matcher.group(), key -> prefix + "_" + names.size()));
-        matcher.appendTail(result);
-        return result.toString();
-    }
+    private String isolated(String text) { return text; }
 
     private String resource(String path) throws Exception {
         try (var stream = getClass().getClassLoader().getResourceAsStream(path)) {

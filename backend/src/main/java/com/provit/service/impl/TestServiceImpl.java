@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.boot.SpringBootVersion;
 
 import com.provit.dao.TestDao;
 import com.provit.service.TestService;
@@ -29,7 +30,7 @@ public class TestServiceImpl implements TestService {
     public Map<String, Object> getSystemStatus() {
         Map<String, Object> status = new HashMap<>();
         status.put("serviceName", "Provit Backend API");
-        status.put("framework", "Spring MVC 5.3.39");
+        status.put("framework", "Spring Boot " + SpringBootVersion.getVersion());
         status.put("serverTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
         if (testDao != null) {

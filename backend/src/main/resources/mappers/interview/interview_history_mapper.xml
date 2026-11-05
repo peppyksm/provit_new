@@ -6,8 +6,8 @@
 <mapper namespace="com.provit.mapper.interview.InterviewHistoryMapper">
 
     <select id="selectNextHistoryNum" resultType="int">
-        SELECT SEQ_T_INTERVIEW_HISTORY.NEXTVAL
-        FROM DUAL
+        SELECT nextval('seq_t_interview_history')
+
     </select>
 
     <insert id="insertInterviewHistory"
@@ -39,7 +39,7 @@
             #{answer4},
             #{question5},
             #{answer5},
-            NVL(#{interviewDate, jdbcType=DATE}, SYSDATE)
+            COALESCE(#{interviewDate, jdbcType=TIMESTAMP}, LOCALTIMESTAMP)
         )
     </insert>
 

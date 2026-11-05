@@ -75,7 +75,7 @@
             JOIN T_USER u ON p.USER_NUM = u.USER_NUM
             ORDER BY (p.VIEW_COUNT + (p.POST_LIKE_COUNT * 10)) DESC, p.POST_NUM DESC
         )
-        WHERE ROWNUM &lt;= #{limit}
+        AS popular_posts LIMIT #{limit}
     </select>
 
     <!-- 2. 전체 게시글 갯수 카운트 (페이징 총 페이지 수 계산용) -->
@@ -114,7 +114,7 @@
             </if>
         </where>
     </select>
-    
+
     <!-- 3. 게시글 상세 조회 -->
     <select id="selectPostDetail" resultType="com.provit.dto.community.PostDTO" parameterType="long">
         SELECT
@@ -152,12 +152,12 @@
     <!-- 5. 게시글 등록 -->
     <insert id="insertPost" parameterType="com.provit.dto.community.PostDTO">
         <selectKey keyProperty="postNum" resultType="long" order="BEFORE">
-            SELECT SEQ_T_POST.NEXTVAL FROM DUAL
+            SELECT nextval('seq_t_post')
         </selectKey>
         INSERT INTO T_POST (
             POST_NUM, CATEGORY_NUM, USER_NUM, POST_TITLE, POST_CONTENT, POST_FILE, POST_DATE
         ) VALUES (
-            #{postNum}, #{categoryNum}, #{userNum}, #{postTitle}, #{postContent}, #{postFile, jdbcType=VARCHAR}, SYSDATE
+            #{postNum}, #{categoryNum}, #{userNum}, #{postTitle}, #{postContent}, #{postFile, jdbcType=VARCHAR}, LOCALTIMESTAMP
         )
     </insert>
 
@@ -190,7 +190,7 @@
 
     <!-- 8. 좋아요(공감) 확인 -->
     <select id="checkPostLike" resultType="int" parameterType="map">
-        SELECT COUNT(*) 
+        SELECT COUNT(*)
         FROM T_POST_LIKE
         WHERE POST_NUM = #{postNum} AND USER_NUM = #{userNum}
     </select>
@@ -198,7 +198,7 @@
     <!-- 9. 좋아요 추가 -->
     <insert id="insertPostLike" parameterType="map">
         INSERT INTO T_POST_LIKE (POST_NUM, USER_NUM, CREATED_AT)
-        VALUES (#{postNum}, #{userNum}, SYSDATE)
+        VALUES (#{postNum}, #{userNum}, LOCALTIMESTAMP)
     </insert>
 
     <!-- 10. 좋아요 취소 -->

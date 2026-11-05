@@ -32,7 +32,7 @@ public class PostController {
     }
 
     // 클라이언트의 실제 IP를 가져오는 유틸 메서드
-    private String getClientIp(javax.servlet.http.HttpServletRequest request) {
+    private String getClientIp(jakarta.servlet.http.HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
@@ -81,8 +81,8 @@ public class PostController {
     public ApiResponse<PostDTO> getPostDetail(
             @org.springframework.web.bind.annotation.PathVariable Long postNum,
             @LoginUser Long userNum,
-            javax.servlet.http.HttpServletRequest request,
-            javax.servlet.http.HttpServletResponse response) {
+            jakarta.servlet.http.HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response) {
         
         // 1. IP 기반 1차 검증 (시크릿 모드 대응)
         String clientIp = getClientIp(request);
@@ -98,9 +98,9 @@ public class PostController {
 
         // 2. 쿠키 기반 2차 검증 (기존 로직 유지)
         if (!hasViewed) {
-            javax.servlet.http.Cookie[] cookies = request.getCookies();
+            jakarta.servlet.http.Cookie[] cookies = request.getCookies();
             if (cookies != null) {
-                for (javax.servlet.http.Cookie cookie : cookies) {
+                for (jakarta.servlet.http.Cookie cookie : cookies) {
                     if (cookie.getName().equals("viewed_post_" + postNum)) {
                         hasViewed = true;
                         break;
@@ -120,7 +120,7 @@ public class PostController {
             }
             viewCache.put(cacheKey, currentTime + (60 * 60 * 1000L)); // 1시간 (밀리초)
 
-            javax.servlet.http.Cookie cookie = new javax.servlet.http.Cookie("viewed_post_" + postNum, "true");
+            jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("viewed_post_" + postNum, "true");
             cookie.setMaxAge(60 * 60); // 1시간 (3600초)
             cookie.setPath("/");
             response.addCookie(cookie);

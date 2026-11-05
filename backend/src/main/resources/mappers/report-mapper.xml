@@ -5,7 +5,7 @@
 
     <!-- 중복 신고 체크 -->
     <select id="checkDuplicateReport" parameterType="com.provit.dto.community.ReportDTO" resultType="int">
-        SELECT COUNT(*) 
+        SELECT COUNT(*)
         FROM T_REPORT
         WHERE REPORTER_NUM = #{reporterNum}
           AND TARGET_TYPE = #{targetType}
@@ -17,7 +17,7 @@
         INSERT INTO T_REPORT (
             REPORT_NUM, REPORTER_NUM, TARGET_TYPE, TARGET_NUM, REPORT_REASON, REPORT_STATUS, REPORT_DATE
         ) VALUES (
-            SEQ_T_REPORT.NEXTVAL, #{reporterNum}, #{targetType}, #{targetNum}, #{reportReason}, 'PENDING', SYSDATE
+            nextval('seq_t_report'), #{reporterNum}, #{targetType}, #{targetNum}, #{reportReason}, 'PENDING', LOCALTIMESTAMP
         )
     </insert>
 

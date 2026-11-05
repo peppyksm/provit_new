@@ -5,21 +5,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
 import java.util.Map;
-
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.springframework.core.io.UrlResource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.support.GenericWebApplicationContext;
-import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
-import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
-import org.w3c.dom.Element;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+
+import com.provit.common.resolver.LoginUserArgumentResolver;
+import com.provit.config.WebConfiguration;
 
 public class PortfolioStaticResourceTest {
     @Rule public TemporaryFolder directory = new TemporaryFolder();
@@ -31,29 +32,12 @@ public class PortfolioStaticResourceTest {
         Files.write(Files.createDirectories(publicRoot.resolve("post_uploadfile")).resolve("sample.png"), new byte[] { 2 });
         Files.write(Files.createDirectories(publicRoot.resolve("profile_uploadfile")).resolve("sample.png"), new byte[] { 3 });
 
-        var factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        var xml = factory.newDocumentBuilder().parse(Path.of("src/main/webapp/WEB-INF/spring/appServlet/servlet-context.xml").toFile());
-        var entries = xml.getElementsByTagNameNS("http://www.springframework.org/schema/mvc", "resources");
         var servlet = new MockServletContext();
-        try (var context = new GenericWebApplicationContext()) {
+        try (var context = new AnnotationConfigWebApplicationContext()) {
             context.setServletContext(servlet);
-            Map<String, Object> handlers = new LinkedHashMap<>();
-            for (int index = 0; index < entries.getLength(); index++) {
-                Element entry = (Element) entries.item(index);
-                String mapping = entry.getAttribute("mapping");
-                if (!mapping.startsWith("/uploads/")) continue;
-                String location = entry.getAttribute("location").replace(
-                        "file:${file.upload.base-dir:D:/fileStorage_Provit}/", publicRoot.toUri().toString());
-                var handler = new ResourceHttpRequestHandler();
-                handler.setServletContext(servlet);
-                handler.setLocations(java.util.List.of(new UrlResource(location)));
-                handler.afterPropertiesSet();
-                handlers.put(mapping, handler);
-            }
-            var mapping = new SimpleUrlHandlerMapping();
-            mapping.setUrlMap(handlers);
-            context.registerBean("resourceMappings", SimpleUrlHandlerMapping.class, () -> mapping);
+            context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("test-storage",
+                    Map.of("file.upload.base-dir", publicRoot.toString())));
+            context.register(ResourceTestConfiguration.class);
             context.refresh();
             var mvc = MockMvcBuilders.webAppContextSetup(context).build();
             assertEquals(404, mvc.perform(get("/uploads/portfolio_uploadfile/15.pdf")).andReturn().getResponse().getStatus());
@@ -61,6 +45,16 @@ public class PortfolioStaticResourceTest {
             assertEquals(404, mvc.perform(get("/uploads/profile_uploadfile/../portfolio_uploadfile/15.pdf")).andReturn().getResponse().getStatus());
             assertEquals(200, mvc.perform(get("/uploads/post_uploadfile/sample.png")).andReturn().getResponse().getStatus());
             assertEquals(200, mvc.perform(get("/uploads/profile_uploadfile/sample.png")).andReturn().getResponse().getStatus());
+        }
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    @EnableWebMvc
+    @Import(WebConfiguration.class)
+    static class ResourceTestConfiguration {
+        @Bean
+        LoginUserArgumentResolver loginUserArgumentResolver() {
+            return new LoginUserArgumentResolver(null, null);
         }
     }
 }

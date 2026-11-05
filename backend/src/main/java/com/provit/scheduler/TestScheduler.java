@@ -13,7 +13,7 @@ public class TestScheduler {
     private static final Logger log = LoggerFactory.getLogger(TestScheduler.class);
 
     /**
-     * 주기적으로 실행할 작업 예시 (실제 활성화 시 root-context.xml에 task 설정 필요)
+     * 주기적으로 실행할 작업 예시 (활성화하려면 메서드에 @Scheduled를 지정합니다.)
      */
     public void runScheduledTask() {
         log.info("스케줄러 작업 실행 예시: 백그라운드 배치 작업");

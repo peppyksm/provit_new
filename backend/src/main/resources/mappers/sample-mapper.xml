@@ -6,7 +6,7 @@
 
     <!-- 오라클 19c 연결 및 쿼리 테스트용 샘플 -->
     <select id="selectCurrentTime" resultType="string">
-        SELECT TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS') FROM DUAL
+        SELECT TO_CHAR(LOCALTIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
     </select>
 
 </mapper>

@@ -31,8 +31,8 @@ public class MainResumeServiceImpl implements MainResumeService {
                 throw new NoSuchElementException("대표로 지정할 수 있는 이력서가 없습니다.");
             }
         } catch (DataIntegrityViolationException exception) {
-            // 지정 도중 이력서가 삭제되어 Oracle 외래키 검증에 실패한 경우.
-            if (exception.getMostSpecificCause() instanceof SQLException sql && sql.getErrorCode() == 2291) {
+            // 지정 도중 이력서가 삭제되어 외래키 검증에 실패한 경우.
+            if (exception.getMostSpecificCause() instanceof SQLException sql && "23503".equals(sql.getSQLState())) {
                 throw new NoSuchElementException("대표로 지정할 수 있는 이력서가 없습니다.");
             }
             throw exception;

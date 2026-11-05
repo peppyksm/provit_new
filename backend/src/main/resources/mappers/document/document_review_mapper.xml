@@ -8,57 +8,57 @@
 
     <insert id="insertReview">
         <selectKey keyProperty="reviewNum" resultType="long" order="BEFORE">
-            SELECT SEQ_T_DOCUMENT_REVIEW.NEXTVAL FROM DUAL
+            SELECT nextval('seq_t_document_review')
         </selectKey>
         INSERT INTO T_DOCUMENT_REVIEW
             (REVIEW_NUM, USER_NUM, REQUEST_ID, REQUEST_HASH, REVIEW_TITLE, REVIEW_STATUS, REVIEW_MODE, CUSTOM_CRITERIA,
              INSTRUCTIONS, MODEL_NAME, PROMPT_VERSION, RESPONSE_VERSION, CAREER_PREPARATION_JSON)
         VALUES (#{reviewNum}, #{userNum}, #{requestId,jdbcType=VARCHAR}, #{requestHash,jdbcType=VARCHAR}, #{reviewTitle}, 'PROCESSING', #{reviewMode},
                 #{customCriteria,jdbcType=VARCHAR}, #{instructions,jdbcType=VARCHAR},
-                #{modelName}, #{promptVersion}, #{responseVersion}, #{careerPreparationJson,jdbcType=CLOB})
+                #{modelName}, #{promptVersion}, #{responseVersion}, #{careerPreparationJson,jdbcType=LONGVARCHAR})
     </insert>
     <insert id="insertDocument">
         <selectKey keyProperty="reviewDocumentNum" resultType="long" order="BEFORE">
-            SELECT SEQ_T_REVIEW_DOCUMENT.NEXTVAL FROM DUAL
+            SELECT nextval('seq_t_review_document')
         </selectKey>
         INSERT INTO T_REVIEW_DOCUMENT
             (REVIEW_DOCUMENT_NUM, REVIEW_NUM, DOCUMENT_TYPE, SOURCE_DOCUMENT_NUM, DOCUMENT_TITLE,
              SOURCE_UPDATED_AT, SOURCE_SNAPSHOT_JSON, ORIGINAL_FILE_NAME, PDF_SNAPSHOT, DOCUMENT_SUMMARY)
         VALUES (#{reviewDocumentNum}, #{reviewNum}, #{documentType}, #{sourceDocumentNum}, #{documentTitle},
-                #{sourceUpdatedAt,jdbcType=TIMESTAMP}, #{sourceSnapshotJson,jdbcType=CLOB},
-                #{originalFileName,jdbcType=VARCHAR}, #{pdfSnapshot,jdbcType=BLOB}, #{summary,jdbcType=CLOB})
+                #{sourceUpdatedAt,jdbcType=TIMESTAMP}, #{sourceSnapshotJson,jdbcType=LONGVARCHAR},
+                #{originalFileName,jdbcType=VARCHAR}, #{pdfSnapshot,jdbcType=VARBINARY}, #{summary,jdbcType=LONGVARCHAR})
     </insert>
     <insert id="insertStrength">
         INSERT INTO T_REVIEW_STRENGTH
             (REVIEW_NUM, REVIEW_DOCUMENT_NUM, DISPLAY_ORDER, STRENGTH_CONTENT,
              STRENGTH_REASON, STRENGTH_SUGGESTION, STRENGTH_SOURCES_JSON)
-        VALUES (#{reviewNum}, #{reviewDocumentNum,jdbcType=NUMERIC}, #{displayOrder}, #{title,jdbcType=CLOB},
-                #{reason,jdbcType=CLOB}, #{suggestion,jdbcType=CLOB}, #{sourcesJson,jdbcType=CLOB})
+        VALUES (#{reviewNum}, #{reviewDocumentNum,jdbcType=NUMERIC}, #{displayOrder}, #{title,jdbcType=LONGVARCHAR},
+                #{reason,jdbcType=LONGVARCHAR}, #{suggestion,jdbcType=LONGVARCHAR}, #{sourcesJson,jdbcType=LONGVARCHAR})
     </insert>
     <insert id="insertImprovement">
         INSERT INTO T_REVIEW_IMPROVEMENT
             (REVIEW_DOCUMENT_NUM, DISPLAY_ORDER, SECTION_NAME, IMPROVEMENT_TITLE, ISSUE_CONTENT,
              ORIGINAL_CONTENT, SUGGESTED_CONTENT, REASON_CONTENT)
-        VALUES (#{reviewDocumentNum}, #{displayOrder}, #{section}, #{title}, #{issue,jdbcType=CLOB},
-                #{original,jdbcType=CLOB}, #{suggestion,jdbcType=CLOB}, #{reason,jdbcType=CLOB})
+        VALUES (#{reviewDocumentNum}, #{displayOrder}, #{section}, #{title}, #{issue,jdbcType=LONGVARCHAR},
+                #{original,jdbcType=LONGVARCHAR}, #{suggestion,jdbcType=LONGVARCHAR}, #{reason,jdbcType=LONGVARCHAR})
     </insert>
     <insert id="insertConsistency">
         <selectKey keyProperty="consistencyNum" resultType="long" order="BEFORE">
-            SELECT SEQ_T_REVIEW_CONSISTENCY.NEXTVAL FROM DUAL
+            SELECT nextval('seq_t_review_consistency')
         </selectKey>
         INSERT INTO T_REVIEW_CONSISTENCY
             (CONSISTENCY_NUM, REVIEW_NUM, DISPLAY_ORDER, ISSUE_TYPE, ISSUE_TITLE, RECOMMENDATION)
-        VALUES (#{consistencyNum}, #{reviewNum}, #{displayOrder}, #{type}, #{title}, #{recommendation,jdbcType=CLOB})
+        VALUES (#{consistencyNum}, #{reviewNum}, #{displayOrder}, #{type}, #{title}, #{recommendation,jdbcType=LONGVARCHAR})
     </insert>
     <insert id="insertSource">
         INSERT INTO T_REVIEW_SOURCE
             (CONSISTENCY_NUM, DISPLAY_ORDER, REVIEW_NUM, REVIEW_DOCUMENT_NUM, SECTION_NAME, SOURCE_CONTENT, PAGE_NUMBER)
         VALUES (#{consistencyNum}, #{displayOrder}, #{reviewNum}, #{reviewDocumentNum}, #{section},
-                #{text,jdbcType=CLOB}, #{pageNumber,jdbcType=NUMERIC})
+                #{text,jdbcType=LONGVARCHAR}, #{pageNumber,jdbcType=NUMERIC})
     </insert>
     <update id="completeReview">
         UPDATE T_DOCUMENT_REVIEW
-        SET OVERALL_SUMMARY = #{summary,jdbcType=CLOB}, CAREER_PREPARATION_JSON = #{careerPreparationJson,jdbcType=CLOB},
+        SET OVERALL_SUMMARY = #{summary,jdbcType=LONGVARCHAR}, CAREER_PREPARATION_JSON = #{careerPreparationJson,jdbcType=LONGVARCHAR},
             REVIEW_STATUS = 'COMPLETED', FINISHED_AT = LOCALTIMESTAMP
         WHERE REVIEW_NUM = #{reviewNum} AND USER_NUM = #{userNum} AND REVIEW_STATUS = 'PROCESSING'
     </update>
@@ -68,7 +68,7 @@
         WHERE REVIEW_NUM = #{reviewNum} AND USER_NUM = #{userNum} AND REVIEW_STATUS = 'PROCESSING'
     </update>
     <update id="updateDocumentSummary">
-        UPDATE T_REVIEW_DOCUMENT SET DOCUMENT_SUMMARY = #{summary,jdbcType=CLOB}
+        UPDATE T_REVIEW_DOCUMENT SET DOCUMENT_SUMMARY = #{summary,jdbcType=LONGVARCHAR}
         WHERE REVIEW_NUM = #{reviewNum} AND REVIEW_DOCUMENT_NUM = #{reviewDocumentNum}
     </update>
     <select id="lockReview" resultType="string">

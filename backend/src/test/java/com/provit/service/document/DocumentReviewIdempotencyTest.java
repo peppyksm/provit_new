@@ -142,16 +142,16 @@ public class DocumentReviewIdempotencyTest {
     }
 
     @Test
-    public void genericOracleIntegrityExceptionStillReusesTheConcurrentRequest() throws Exception {
-        duplicateInsertFailure = new org.springframework.dao.DataIntegrityViolationException("Oracle unique constraint",
-                new java.sql.SQLException("Unique request ID", "23000", 1));
+    public void genericPostgresIntegrityExceptionStillReusesTheConcurrentRequest() throws Exception {
+        duplicateInsertFailure = new org.springframework.dao.DataIntegrityViolationException("Postgres unique constraint",
+                new java.sql.SQLException("Unique request ID", "23505", 0));
         assertConcurrentRequestsReuseOneRecord();
     }
 
     @Test
-    public void uncategorizedOracleUniqueExceptionStillReusesTheConcurrentRequest() throws Exception {
+    public void uncategorizedPostgresUniqueExceptionStillReusesTheConcurrentRequest() throws Exception {
         duplicateInsertFailure = new org.springframework.jdbc.UncategorizedSQLException("insert", "INSERT",
-                new java.sql.SQLException("Unique request ID", "23000", 1));
+                new java.sql.SQLException("Unique request ID", "23505", 0));
         assertConcurrentRequestsReuseOneRecord();
     }
 
@@ -184,7 +184,7 @@ public class DocumentReviewIdempotencyTest {
     @Test
     public void otherIntegrityFailuresAreNotTreatedAsSuccessfulDuplicates() {
         var failure = new org.springframework.dao.DataIntegrityViolationException("Too long",
-                new java.sql.SQLException("Title exceeds column size", "72000", 12899));
+                new java.sql.SQLException("Title exceeds column size", "22001", 0));
         assertReservationFailureIsPropagated(failure);
     }
 

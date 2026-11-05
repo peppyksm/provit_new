@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import java.lang.reflect.Proxy;
 import java.sql.SQLException;
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public class MainResumeControllerTest {
                 assertEquals(7L, userNum);
                 if (resumeDeletedDuringSet) {
                     throw new DataIntegrityViolationException("이력서 삭제 경합",
-                            new SQLException("parent key missing", "23000", 2291));
+                            new SQLException("parent key missing", "23503", 0));
                 }
                 if (resumeNum != 11 && resumeNum != 12) return 0;
                 writes++;

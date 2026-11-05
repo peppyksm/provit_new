@@ -15,7 +15,7 @@
 
     <insert id="insertResume" parameterType="com.provit.dto.document.ResumeDTO">
         <selectKey keyProperty="resumeNum" resultType="int" order="BEFORE">
-            SELECT SEQ_T_RESUME.NEXTVAL FROM DUAL
+            SELECT nextval('seq_t_resume')
         </selectKey>
         INSERT INTO T_RESUME (
             RESUME_NUM,
@@ -36,17 +36,17 @@
             #{occupationCode, jdbcType=VARCHAR},
             #{jobCode, jdbcType=VARCHAR},
             #{highestLevel},
-            #{motivation, jdbcType=CLOB},
+            #{motivation, jdbcType=LONGVARCHAR},
             #{desiredLocation, jdbcType=VARCHAR},
             #{desiredWorkType, jdbcType=VARCHAR},
-            SYSDATE,
-            SYSDATE
+            LOCALTIMESTAMP,
+            LOCALTIMESTAMP
         )
     </insert>
 
     <insert id="insertEducation" parameterType="com.provit.dto.document.EducationDTO">
         <selectKey keyProperty="eduNum" resultType="int" order="BEFORE">
-            SELECT SEQ_T_EDUCATION.NEXTVAL FROM DUAL
+            SELECT nextval('seq_t_education')
         </selectKey>
         INSERT INTO T_EDUCATION (
             EDU_NUM,
@@ -69,7 +69,7 @@
 
     <insert id="insertCareer" parameterType="com.provit.dto.document.CareerDTO">
         <selectKey keyProperty="careerNum" resultType="int" order="BEFORE">
-            SELECT SEQ_T_CAREER.NEXTVAL FROM DUAL
+            SELECT nextval('seq_t_career')
         </selectKey>
         INSERT INTO T_CAREER (
             CAREER_NUM,
@@ -90,7 +90,7 @@
 
     <insert id="insertCertification" parameterType="com.provit.dto.document.CertificationDTO">
         <selectKey keyProperty="certNum" resultType="int" order="BEFORE">
-            SELECT SEQ_T_CERTIFICATION.NEXTVAL FROM DUAL
+            SELECT nextval('seq_t_certification')
         </selectKey>
         INSERT INTO T_CERTIFICATION (
             CERT_NUM,
@@ -114,10 +114,10 @@
             OCCUPATION_CODE = #{occupationCode, jdbcType=VARCHAR},
             JOB_CODE = #{jobCode, jdbcType=VARCHAR},
             HIGHEST_LEVEL = #{highestLevel},
-            MOTIVATION = #{motivation, jdbcType=CLOB},
+            MOTIVATION = #{motivation, jdbcType=LONGVARCHAR},
             DESIRED_LOCATION = #{desiredLocation, jdbcType=VARCHAR},
             DESIRED_WORK_TYPE = #{desiredWorkType, jdbcType=VARCHAR},
-            UPDATED_AT = SYSDATE
+            UPDATED_AT = LOCALTIMESTAMP
         WHERE RESUME_NUM = #{resumeNum}
           AND USER_NUM = #{userNum}
     </update>

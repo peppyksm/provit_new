@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.provit.common.ResponseCode;
 import com.provit.dto.response.ApiResponse;
@@ -25,6 +27,12 @@ import com.provit.service.interview.InterviewMaintenanceException;
 public class GlobalExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    public ResponseEntity<ApiResponse<String>> handleMissingResource(Exception exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(ResponseCode.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."));
+    }
 
     @ExceptionHandler(InterviewProcessingException.class)
     public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> handleInterviewProcessing(

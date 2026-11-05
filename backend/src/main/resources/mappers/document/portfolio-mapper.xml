@@ -6,8 +6,8 @@
 <mapper namespace="com.provit.mapper.document.PortfolioMapper">
 
     <select id="selectNextPortfolioNum" resultType="int">
-        SELECT SEQ_T_PORTFOLIO.NEXTVAL
-        FROM DUAL
+        SELECT nextval('seq_t_portfolio')
+
     </select>
 
     <insert id="insertPortfolio" parameterType="com.provit.dto.document.PortfolioDTO">
@@ -27,8 +27,8 @@
             #{fileUrl},
             #{originalFileName},
             #{savedFileName},
-            SYSDATE,
-            SYSDATE
+            LOCALTIMESTAMP,
+            LOCALTIMESTAMP
         )
     </insert>
 

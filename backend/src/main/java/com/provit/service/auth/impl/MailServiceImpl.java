@@ -2,9 +2,9 @@ package com.provit.service.auth.impl;
 
 import java.nio.charset.StandardCharsets;
 
-import javax.annotation.PostConstruct;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
+import jakarta.annotation.PostConstruct;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

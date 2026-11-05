@@ -1,0 +1,7 @@
+# Copy to database.properties (ignored by Git), then set your local password.
+db.driverClassName=org.postgresql.Driver
+db.url=jdbc:postgresql://127.0.0.1:5432/provit_new
+db.username=provit
+db.password=CHANGE_ME
+db.maxPoolSize=10
+db.minIdle=2

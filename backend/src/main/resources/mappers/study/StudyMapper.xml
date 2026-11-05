@@ -80,7 +80,7 @@
 		parameterType="com.provit.dto.study.StudyDTO">
 		<selectKey keyProperty="studyNum" resultType="Long"
 			order="BEFORE">
-			SELECT SEQ_T_STUDY.NEXTVAL FROM DUAL
+			SELECT nextval('seq_t_study')
 		</selectKey>
 		INSERT INTO T_STUDY (
 		STUDY_NUM,

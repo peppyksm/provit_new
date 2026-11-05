@@ -23,7 +23,7 @@
 
     <!-- 1. 이메일로 회원 단건 조회 -->
     <select id="selectByEmail" parameterType="string" resultMap="UserResultMap">
-        SELECT 
+        SELECT
             USER_NUM,
             USER_NAME,
             USER_NICKNAME,
@@ -43,7 +43,7 @@
 
     <!-- 2. 닉네임으로 회원 단건 조회 -->
     <select id="selectByNickname" parameterType="string" resultMap="UserResultMap">
-        SELECT 
+        SELECT
             USER_NUM,
             USER_NAME,
             USER_NICKNAME,
@@ -64,7 +64,7 @@
 
     <!-- 3. 회원 식별 번호로 단건 조회 -->
     <select id="selectByUserNum" parameterType="long" resultMap="UserResultMap">
-        SELECT 
+        SELECT
             USER_NUM,
             USER_NAME,
             USER_NICKNAME,
@@ -100,7 +100,7 @@
     <!-- 6. 신규 회원가입 INSERT -->
     <insert id="insertUser" parameterType="com.provit.dto.auth.UserDTO">
         <selectKey keyProperty="userNum" resultType="long" order="BEFORE">
-            SELECT SEQ_T_USER.NEXTVAL FROM DUAL
+            SELECT nextval('seq_t_user')
         </selectKey>
         INSERT INTO T_USER (
             USER_NUM,
@@ -121,8 +121,8 @@
             #{userBirthDate, jdbcType=DATE},
             #{userEmail},
             #{userPw},
-            SYSDATE,
-            NVL(#{userType, jdbcType=VARCHAR}, 'USER'),
+            LOCALTIMESTAMP,
+            COALESCE(#{userType, jdbcType=VARCHAR}, 'USER'),
             #{occupationCode, jdbcType=VARCHAR},
             #{jobCode, jdbcType=VARCHAR},
             0

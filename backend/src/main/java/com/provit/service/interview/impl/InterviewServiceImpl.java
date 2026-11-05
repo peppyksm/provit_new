@@ -704,7 +704,7 @@ public class InterviewServiceImpl implements InterviewService {
     private boolean isPermanentStorageFailure(RuntimeException exception) {
         for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
             if (cause instanceof DataIntegrityViolationException
-                    || cause instanceof SQLException sqlException && sqlException.getErrorCode() == 12899) {
+                    || cause instanceof SQLException sqlException && "22001".equals(sqlException.getSQLState())) {
                 return true;
             }
         }

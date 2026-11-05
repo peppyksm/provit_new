@@ -1,5 +1,7 @@
 # Maven → Gradle 전환
 
+> 이 문서는 Spring Boot 도입 전 Gradle 전환 단계의 기록이다. 현재 실행 방식은 [Spring Boot 안내](spring-boot-migration.md), DB 구성·통합 테스트는 [PostgreSQL 안내](postgresql-migration.md)를 따른다.
+
 ## 범위
 
 백엔드 빌드 도구를 Gradle 8.14.3으로 변경한다. Java 17, Spring Framework 5.3.39, MyBatis, Oracle JDBC, 기존 Java 소스·XML 설정·리소스, Tomcat 9 WAR 배포를 유지한다. Spring Boot, PostgreSQL, JPA, TypeScript 전환은 다음 단계에서 진행한다.

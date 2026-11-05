@@ -13,7 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.PlatformTransactionManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 import org.springframework.test.util.ReflectionTestUtils;
 import com.provit.common.GlobalExceptionHandler;
 import com.provit.common.auth.AuthCookieService;

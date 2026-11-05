@@ -411,7 +411,7 @@ public class InterviewFourCallFlowTest {
     public void permanentDatabaseErrorsDoNotRepeatSaveOrRegenerateEvaluation() {
         for (RuntimeException failure : List.of(
                 new org.springframework.dao.DataIntegrityViolationException("invalid stored length"),
-                new IllegalStateException(new java.sql.SQLException("oversized column", "72000", 12899)))) {
+                new IllegalStateException(new java.sql.SQLException("oversized column", "22001", 0)))) {
             var generator = new RecordingGenerator();
             var dao = fakeDao(new AtomicInteger());
             var attempts = new AtomicInteger();

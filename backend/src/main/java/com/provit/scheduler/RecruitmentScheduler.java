@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,6 +18,7 @@ import com.provit.service.recruitment.RecruitmentService;
  * 사람인 채용공고 일일 정기 수집 스케줄러 및 서버 기동 시점 자동 수집 컴포넌트
  */
 @Component
+@ConditionalOnProperty(name = "provit.scheduling.enabled", havingValue = "true", matchIfMissing = true)
 public class RecruitmentScheduler {
 
 	private static final Logger log = LoggerFactory.getLogger(RecruitmentScheduler.class);

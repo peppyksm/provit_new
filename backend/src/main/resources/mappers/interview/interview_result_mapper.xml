@@ -54,7 +54,7 @@
             #{weaknesses},
             #{comparison},
             #{improvements},
-            NVL(#{interviewDate, jdbcType=DATE}, SYSDATE)
+            COALESCE(#{interviewDate, jdbcType=TIMESTAMP}, LOCALTIMESTAMP)
         )
     </insert>
 
