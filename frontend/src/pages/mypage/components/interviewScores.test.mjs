@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { radarPoint, radarPolygon, sortInterviewResults, formatScore } from './interviewScores.js';
+import { radarPoint, radarPolygon, sortInterviewResults, formatScore } from './interviewScores.ts';
 
 test('최초와 최근 면접은 날짜와 동일 날짜의 기록 번호로 결정한다', () => {
     const input = [

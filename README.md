@@ -15,7 +15,7 @@
 | **Persistence**     | JPA / Hibernate ORM    | Entity·JPQL·네이티브 쿼리, JPA 트랜잭션       |
 | **Build**           | Gradle Wrapper         | **8.14.3**, 실행 가능한 JAR                   |
 | **Backend IDE**     | Eclipse / STS / IntelliJ | Gradle 프로젝트                           |
-| **Frontend**        | React 19 + Vite        | JavaScript, Axios, React Router, Lucide Icons |
+| **Frontend**        | React 19 + Vite        | TypeScript 6, Axios, React Router, Lucide Icons |
 | **Frontend IDE**    | Visual Studio Code     | ESLint, Prettier                              |
 | **협업 & 형상관리** | Git / GitHub           | Git-Flow (PR & Code Review 기반)              |
 
@@ -107,6 +107,17 @@ Java 17로 빌드합니다. `JAVA_HOME`을 JDK 17로 지정하고, 저장소에 
 
    - 브라우저에서 `http://localhost:5173` 접속
    - 화면 중앙의 **[서버 상태 확인 (/api/health)]** 버튼을 눌러 백엔드와의 통신을 테스트합니다.
+
+4. **전환된 코드 검증** (`frontend` 폴더에서):
+
+   ```bash
+   npm run typecheck
+   npm test
+   npm run build
+   ```
+
+   - 빌드는 타입 검사를 통과한 뒤 실행됩니다.
+   - [TypeScript 전환 범위와 기존 린트 지적](docs/typescript-migration.md)
 
 ---
 

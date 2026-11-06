@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getResumeDateError, getTodayInSeoul } from './resumeDateValidation.js';
+import { getResumeDateError, getTodayInSeoul } from './resumeDateValidation.ts';
 
 test('한국 자정에 오늘 날짜가 바뀐다', () => {
     assert.equal(getTodayInSeoul(new Date('2026-09-30T14:59:59Z')), '2026-09-30');

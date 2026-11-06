@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { saveReviewRequest, loadReviewRequest, resumeReviewRequest, reviewSelectionParams, createReviewRequestId } from './reviewRequest.js';
+import { saveReviewRequest, loadReviewRequest, resumeReviewRequest, reviewSelectionParams, createReviewRequestId } from './reviewRequest.ts';
 
 const requestId = '7d8f6541-abcd-4b4d-9b02-37e7532b9259';
 const payload = { resumeNum: 11, letterNum: 12, portfolioNum: null, reviewMode: 'comprehensive', customCriteria: null, instructions: '' };

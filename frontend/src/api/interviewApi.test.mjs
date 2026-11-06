@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
-import client from './client.js';
-import { createInterview } from './interviewApi.js';
+import client from './client.ts';
+import { createInterview } from './interviewApi.ts';
 
 const settings = {
     resumeNum: '1',

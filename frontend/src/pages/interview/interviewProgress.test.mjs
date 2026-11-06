@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { clearInterviewProgress, getClientDeadline, getResumeDraft,
-    readInterviewProgress, remainingAnswerSeconds, saveInterviewProgress } from './interviewProgress.js';
+    readInterviewProgress, remainingAnswerSeconds, saveInterviewProgress } from './interviewProgress.ts';
 
 const storage = () => {
     const values = new Map();

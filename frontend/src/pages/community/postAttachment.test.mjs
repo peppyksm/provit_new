@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
-import { createPostWithAttachment, savePostAttachment } from './postAttachment.js';
-import { deleteFile } from '../../api/fileApi.js';
-import client from '../../api/client.js';
+import { createPostWithAttachment, savePostAttachment } from './postAttachment.ts';
+import { deleteFile } from '../../api/fileApi.ts';
+import client from '../../api/client.ts';
 
 const success = (data = null) => ({ responseCode: { code: 200 }, data });
 const oldFile = '42_old.png';

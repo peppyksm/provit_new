@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { AxiosError } from 'axios';
-import client from './client.js';
+import client from './client.ts';
 
 async function withAdapter(adapter, verify) {
     const previousAdapter = client.defaults.adapter;

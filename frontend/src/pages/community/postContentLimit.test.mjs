@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { postContentBytes, postContentError } from './postContentLimit.js';
+import { postContentBytes, postContentError } from './postContentLimit.ts';
 
 test('영문은 4,000바이트까지 허용하고 초과 시 저장 전에 안내한다', () => {
     assert.equal(postContentBytes('A'.repeat(4000)), 4000);
