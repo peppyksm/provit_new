@@ -1,26 +1,44 @@
 package com.provit.dao.community.impl;
 
+import static com.provit.persistence.JpaQueries.*;
+import static com.provit.persistence.JpaStore.params;
+
 import com.provit.dao.community.ReportDAO;
 import com.provit.dto.community.ReportDTO;
-import org.apache.ibatis.session.SqlSession;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.provit.persistence.*;
+import com.provit.persistence.entity.*;
+
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.*;
+import java.util.*;
 
 @Repository
+@Transactional(readOnly = true)
 public class ReportDAOImpl implements ReportDAO {
-    
-    @Autowired
-    private SqlSession sqlSession;
-    
-    private static final String NAMESPACE = "com.provit.mapper.ReportMapper";
+    private final JpaStore store;
 
-    @Override
-    public int checkDuplicateReport(ReportDTO reportDTO) throws Exception {
-        return sqlSession.selectOne(NAMESPACE + ".checkDuplicateReport", reportDTO);
+    public ReportDAOImpl(JpaStore store) {
+        this.store = store;
     }
 
-    @Override
-    public void insertReport(ReportDTO reportDTO) throws Exception {
-        sqlSession.insert(NAMESPACE + ".insertReport", reportDTO);
+    public int checkDuplicateReport(ReportDTO value) {
+        return Math.toIntExact(
+                store.count(
+                        ReportEntity.class,
+                        "where e.reporterNum=:user and e.targetType=:type and e.targetNum=:id",
+                        params(
+                                "user",
+                                value.getReporterNum().intValue(),
+                                "type",
+                                value.getTargetType(),
+                                "id",
+                                value.getTargetNum())));
+    }
+
+    @Transactional
+    public void insertReport(ReportDTO value) {
+        store.insert(ReportEntity.class, value, Map.of(), Set.of("reportDate", "reportStatus"));
     }
 }

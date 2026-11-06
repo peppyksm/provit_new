@@ -1,7 +1,5 @@
 package com.provit.dao.document;
 
-import java.util.List;
-
 import com.provit.dto.document.CareerDTO;
 import com.provit.dto.document.CertificationDTO;
 import com.provit.dto.document.CoverLetterDTO;
@@ -9,6 +7,8 @@ import com.provit.dto.document.DocumentSummaryDTO;
 import com.provit.dto.document.EducationDTO;
 import com.provit.dto.document.PortfolioDTO;
 import com.provit.dto.document.ResumeDTO;
+
+import java.util.List;
 
 public interface DocumentDAO {
 

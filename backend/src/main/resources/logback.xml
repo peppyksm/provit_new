@@ -13,9 +13,9 @@
     <!-- Spring Framework 로그 레벨 -->
     <logger name="org.springframework" level="INFO" />
 
-    <!-- MyBatis SQL 쿼리 로그 -->
-    <logger name="com.provit.mapper" level="DEBUG" />
-    <logger name="org.mybatis" level="INFO" />
+    <!-- JPA/Hibernate SQL (파라미터 값 로깅은 활성화하지 않음) -->
+    <logger name="org.hibernate" level="INFO" />
+    <logger name="org.hibernate.SQL" level="DEBUG" />
 
     <root level="INFO">
         <appender-ref ref="CONSOLE" />

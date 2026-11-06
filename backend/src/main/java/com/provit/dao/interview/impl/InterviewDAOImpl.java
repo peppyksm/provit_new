@@ -1,150 +1,181 @@
 package com.provit.dao.interview.impl;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.ibatis.session.SqlSession;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
+import static com.provit.persistence.JpaQueries.*;
+import static com.provit.persistence.JpaStore.params;
 
 import com.provit.dao.interview.InterviewDAO;
-import com.provit.dto.document.CareerDTO;
-import com.provit.dto.document.CertificationDTO;
-import com.provit.dto.document.CoverLetterDTO;
-import com.provit.dto.document.EducationDTO;
-import com.provit.dto.document.PortfolioDTO;
-import com.provit.dto.document.ResumeDTO;
-import com.provit.dto.interview.InterviewHistoryDTO;
-import com.provit.dto.interview.InterviewDocumentOptionDTO;
-import com.provit.dto.interview.InterviewResultDTO;
+import com.provit.dto.document.*;
+import com.provit.dto.interview.*;
 import com.provit.dto.user.UserJobPreferenceDTO;
+import com.provit.persistence.*;
+import com.provit.persistence.entity.*;
+
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.*;
+import java.util.*;
 
 @Repository
+@Transactional(readOnly = true)
 public class InterviewDAOImpl implements InterviewDAO {
+    private final JpaStore store;
 
-    private static final String PORTFOLIO_NAMESPACE = "com.provit.mapper.document.PortfolioMapper";
-    private static final String COVER_LETTER_NAMESPACE = "com.provit.mapper.document.CoverLetterMapper";
-    private static final String RESUME_NAMESPACE = "com.provit.mapper.document.ResumeMapper";
-    private static final String USER_JOB_NAMESPACE = "com.provit.mapper.interview.UserJobMapper";
-    private static final String INTERVIEW_HISTORY_NAMESPACE = "com.provit.mapper.interview.InterviewHistoryMapper";
-    private static final String INTERVIEW_RESULT_NAMESPACE = "com.provit.mapper.interview.InterviewResultMapper";
-
-    private final SqlSession sqlSession;
-
-    @Autowired
-    public InterviewDAOImpl(SqlSession sqlSession) {
-        this.sqlSession = sqlSession;
+    public InterviewDAOImpl(JpaStore store) {
+        this.store = store;
     }
 
-    @Override
-    public List<InterviewDocumentOptionDTO> selectPortfolioListByUserNum(int userNum) {
-        return sqlSession.selectList(PORTFOLIO_NAMESPACE + ".selectPortfolioListByUserNum", userNum);
-    }
-
-    @Override
-    public PortfolioDTO selectPortfolioByPortfolioNumAndUserNum(int portfolioNum, int userNum) {
-        return sqlSession.selectOne(
-                PORTFOLIO_NAMESPACE + ".selectPortfolio",
-                createDocumentKeyMap("portfolioNum", portfolioNum, userNum));
-    }
-
-    @Override
-    public List<InterviewDocumentOptionDTO> selectCoverLetterListByUserNum(int userNum) {
-        return sqlSession.selectList(COVER_LETTER_NAMESPACE + ".selectCoverLetterListByUserNum", userNum);
-    }
-
-    @Override
-    public CoverLetterDTO selectCoverLetterByLetterNumAndUserNum(int letterNum, int userNum) {
-        return sqlSession.selectOne(
-                COVER_LETTER_NAMESPACE + ".selectCoverLetter",
-                createDocumentKeyMap("letterNum", letterNum, userNum));
-    }
-
-    @Override
-    public List<InterviewDocumentOptionDTO> selectResumeListByUserNum(int userNum) {
-        return sqlSession.selectList(RESUME_NAMESPACE + ".selectResumeListByUserNum", userNum);
-    }
-
-    @Override
-    public ResumeDTO selectResumeByResumeNumAndUserNum(int resumeNum, int userNum) {
-        return sqlSession.selectOne(
-                RESUME_NAMESPACE + ".selectResume",
-                createDocumentKeyMap("resumeNum", resumeNum, userNum));
-    }
-
-    @Override
-    public List<EducationDTO> selectEducationListByResumeNum(int resumeNum) {
-        return sqlSession.selectList(RESUME_NAMESPACE + ".selectEducationList", resumeNum);
-    }
-
-    @Override
-    public List<CareerDTO> selectCareerListByResumeNum(int resumeNum) {
-        return sqlSession.selectList(RESUME_NAMESPACE + ".selectCareerList", resumeNum);
-    }
-
-    @Override
-    public List<CertificationDTO> selectCertificationListByResumeNum(int resumeNum) {
-        return sqlSession.selectList(RESUME_NAMESPACE + ".selectCertificationList", resumeNum);
-    }
-
-    @Override
-    public UserJobPreferenceDTO selectUserJobPreferenceByUserNum(int userNum) {
-        return sqlSession.selectOne(USER_JOB_NAMESPACE + ".selectUserJobPreferenceByUserNum", userNum);
-    }
-
-    @Override
+    @Transactional
     public int selectNextHistoryNum() {
-        return sqlSession.selectOne(INTERVIEW_HISTORY_NAMESPACE + ".selectNextHistoryNum");
+        return store.scalar("select nextval('seq_t_interview_history')", Integer.class, Map.of());
     }
 
-    @Override
-    public int insertInterviewHistory(InterviewHistoryDTO history) {
-        return sqlSession.insert(INTERVIEW_HISTORY_NAMESPACE + ".insertInterviewHistory", history);
+    @Transactional
+    public int insertInterviewHistory(InterviewHistoryDTO value) {
+        return store.insert(InterviewHistoryEntity.class, value, Map.of());
     }
 
-    @Override
-    public int insertInterviewResult(InterviewResultDTO result) {
-        return sqlSession.insert(INTERVIEW_RESULT_NAMESPACE + ".insertInterviewResult", result);
+    @Transactional
+    public int insertInterviewResult(InterviewResultDTO value) {
+        return store.insert(
+                InterviewResultEntity.class,
+                value,
+                Map.of(
+                        "strengths",
+                        "strength",
+                        "weaknesses",
+                        "weakness",
+                        "comparison",
+                        "previousComparison",
+                        "improvements",
+                        "improvementPoint"));
     }
 
-    @Override
-    public List<InterviewResultDTO> selectInterviewResultListByUserNum(int userNum) {
-        return sqlSession.selectList(INTERVIEW_RESULT_NAMESPACE + ".selectInterviewResultListByUserNum", userNum);
+    public InterviewHistoryDTO selectInterviewHistory(int history, int user) {
+        return store.one(
+                InterviewHistoryEntity.class,
+                InterviewHistoryDTO.class,
+                "where e.historyNum=:id and e.userNum=:user",
+                params("id", (long) history, "user", user));
     }
 
-    @Override
-    public InterviewHistoryDTO selectInterviewHistory(int historyNum, int userNum) {
-        return sqlSession.selectOne(
-                INTERVIEW_HISTORY_NAMESPACE + ".selectInterviewHistory",
-                createInterviewKeyMap(historyNum, userNum));
+    private List<InterviewResultDTO> results(String where, Map<String, Object> values, int limit) {
+        return store.list(
+                InterviewResultEntity.class,
+                InterviewResultDTO.class,
+                where,
+                values,
+                0,
+                limit,
+                Map.of(
+                        "strength",
+                        "strengths",
+                        "weakness",
+                        "weaknesses",
+                        "previousComparison",
+                        "comparison",
+                        "improvementPoint",
+                        "improvements"));
     }
 
-    @Override
-    public InterviewResultDTO selectInterviewResult(int historyNum, int userNum) {
-        return sqlSession.selectOne(
-                INTERVIEW_RESULT_NAMESPACE + ".selectInterviewResult",
-                createInterviewKeyMap(historyNum, userNum));
+    public InterviewResultDTO selectInterviewResult(int history, int user) {
+        var rows =
+                results(
+                        "where e.historyNum=:id and e.userNum=:user",
+                        params("id", (long) history, "user", user),
+                        1);
+        return rows.isEmpty() ? null : rows.get(0);
     }
 
-    @Override
-    public InterviewResultDTO selectLatestInterviewResultByUserNum(int userNum) {
-        return sqlSession.selectOne(
-                INTERVIEW_RESULT_NAMESPACE + ".selectLatestInterviewResultByUserNum",
-                userNum);
+    public List<InterviewResultDTO> selectInterviewResultListByUserNum(int user) {
+        return results(
+                "where e.userNum=:user order by e.interviewDate desc,e.historyNum desc",
+                params("user", user),
+                Integer.MAX_VALUE);
     }
 
-    private Map<String, Object> createInterviewKeyMap(int number, int userNum) {
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("number", number);
-        parameters.put("userNum", userNum);
-        return parameters;
+    public InterviewResultDTO selectLatestInterviewResultByUserNum(int user) {
+        var rows =
+                results(
+                        "where e.userNum=:user order by e.interviewDate desc,e.historyNum desc",
+                        params("user", user),
+                        1);
+        return rows.isEmpty() ? null : rows.get(0);
     }
 
-    private Map<String, Object> createDocumentKeyMap(String documentKey, int number, int userNum) {
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put(documentKey, number);
-        parameters.put("userNum", userNum);
-        return parameters;
+    public UserJobPreferenceDTO selectUserJobPreferenceByUserNum(int userNum) {
+        return store.nativeOne(
+                INTERVIEW_PREFERENCE, UserJobPreferenceDTO.class, params("userNum", userNum));
+    }
+
+    public List<InterviewDocumentOptionDTO> selectResumeListByUserNum(int user) {
+        return store.project(
+                "select e.resumeNum as documentNum,e.resumeTitle as documentTitle from ResumeEntity"
+                        + " e where e.userNum=:user order by e.updatedAt desc,e.resumeNum desc",
+                InterviewDocumentOptionDTO.class,
+                params("user", user));
+    }
+
+    public List<InterviewDocumentOptionDTO> selectCoverLetterListByUserNum(int user) {
+        return store.project(
+                "select e.letterNum as documentNum,e.coverLetterTitle as documentTitle from"
+                        + " CoverLetterEntity e where e.userNum=:user order by e.updatedAt"
+                        + " desc,e.letterNum desc",
+                InterviewDocumentOptionDTO.class,
+                params("user", user));
+    }
+
+    public List<InterviewDocumentOptionDTO> selectPortfolioListByUserNum(int user) {
+        return store.project(
+                "select e.portfolioNum as documentNum,e.portfolioTitle as documentTitle from"
+                        + " PortfolioEntity e where e.userNum=:user order by e.updatedAt"
+                        + " desc,e.portfolioNum desc",
+                InterviewDocumentOptionDTO.class,
+                params("user", user));
+    }
+
+    public ResumeDTO selectResumeByResumeNumAndUserNum(int resumeNum, int userNum) {
+        return store.nativeOne(
+                RESUME_DETAIL, ResumeDTO.class, params("resumeNum", resumeNum, "userNum", userNum));
+    }
+
+    public CoverLetterDTO selectCoverLetterByLetterNumAndUserNum(int id, int user) {
+        return store.one(
+                CoverLetterEntity.class,
+                CoverLetterDTO.class,
+                "where e.letterNum=:id and e.userNum=:user",
+                params("id", (long) id, "user", user));
+    }
+
+    public PortfolioDTO selectPortfolioByPortfolioNumAndUserNum(int id, int user) {
+        return store.one(
+                PortfolioEntity.class,
+                PortfolioDTO.class,
+                "where e.portfolioNum=:id and e.userNum=:user",
+                params("id", (long) id, "user", user));
+    }
+
+    public List<EducationDTO> selectEducationListByResumeNum(int id) {
+        return store.list(
+                EducationEntity.class,
+                EducationDTO.class,
+                "where e.resumeNum=:id order by e.admissionDate desc,e.eduNum desc",
+                params("id", (long) id));
+    }
+
+    public List<CareerDTO> selectCareerListByResumeNum(int id) {
+        return store.list(
+                CareerEntity.class,
+                CareerDTO.class,
+                "where e.resumeNum=:id order by e.joinDate desc,e.careerNum desc",
+                params("id", (long) id));
+    }
+
+    public List<CertificationDTO> selectCertificationListByResumeNum(int id) {
+        return store.list(
+                CertificationEntity.class,
+                CertificationDTO.class,
+                "where e.resumeNum=:id order by e.issueDate desc,e.certNum desc",
+                params("id", (long) id));
     }
 }

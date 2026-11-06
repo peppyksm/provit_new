@@ -17,7 +17,9 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.apache.ibatis.session.SqlSessionFactory;
+import jakarta.persistence.EntityManagerFactory;
+import com.provit.persistence.entity.UserEntity;
+import org.springframework.orm.jpa.JpaTransactionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -46,7 +48,10 @@ import com.provit.util.jwt.JwtProvider;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "spring.config.import=", "provit.scheduling.enabled=false",
         "jwt.secret=boot-migration-test-only-secret-32-bytes-minimum",
-        "auth.cookie.secure=false", "auth.cookie.same-site=Lax"
+        "auth.cookie.secure=false", "auth.cookie.same-site=Lax",
+        "spring.jpa.hibernate.ddl-auto=none",
+        "spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect",
+        "spring.jpa.properties.hibernate.boot.allow_jdbc_metadata_access=false"
 })
 class BootApplicationTest {
     @TempDir static Path storage;
@@ -60,7 +65,7 @@ class BootApplicationTest {
     @LocalServerPort int port;
     @Autowired ObjectMapper json;
     @Autowired JwtProvider jwt;
-    @Autowired SqlSessionFactory sessions;
+    @Autowired EntityManagerFactory entities;
     @Autowired ApplicationContext context;
     @MockitoBean DataSource dataSource;
     @MockitoBean TestDao healthDao;
@@ -91,10 +96,10 @@ class BootApplicationTest {
     }
 
     @Test
-    void bootWiresExistingMapperXmlAndTransactionProxies() {
-        assertSame(dataSource, sessions.getConfiguration().getEnvironment().getDataSource());
-        assertTrue(sessions.getConfiguration().hasStatement("com.provit.mapper.document.ResumeMapper.insertResume"));
-        assertTrue(sessions.getConfiguration().hasStatement("recruitment_mapper.selectRecruitmentList"));
+    void bootWiresEntitiesAndJpaTransactionProxies() {
+        assertEquals(27,entities.getMetamodel().getEntities().size());
+        assertNotNull(entities.getMetamodel().entity(UserEntity.class));
+        assertInstanceOf(JpaTransactionManager.class,context.getBean("transactionManager"));
         assertTrue(AopUtils.isAopProxy(context.getBean("documentReviewServiceImpl")));
         assertFalse(context.containsBean("recruitmentScheduler"));
     }

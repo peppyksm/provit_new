@@ -1,39 +1,50 @@
 package com.provit.dao.auth.impl;
 
-import org.apache.ibatis.session.SqlSession;
-import org.springframework.stereotype.Repository;
+import static com.provit.persistence.JpaQueries.*;
+import static com.provit.persistence.JpaStore.params;
 
 import com.provit.dao.auth.RefreshTokenDAO;
 import com.provit.dto.auth.RefreshTokenDTO;
+import com.provit.persistence.*;
+import com.provit.persistence.entity.*;
+
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.*;
+import java.util.*;
 
 @Repository
+@Transactional(readOnly = true)
 public class RefreshTokenDAOImpl implements RefreshTokenDAO {
+    private final JpaStore store;
 
-    private static final String NAMESPACE = "com.provit.mapper.RefreshTokenMapper";
-
-    private final SqlSession sqlSession;
-
-    public RefreshTokenDAOImpl(SqlSession sqlSession) {
-        this.sqlSession = sqlSession;
+    public RefreshTokenDAOImpl(JpaStore store) {
+        this.store = store;
     }
 
-    @Override
-    public int insert(RefreshTokenDTO refreshToken) {
-        return sqlSession.insert(NAMESPACE + ".insert", refreshToken);
+    @Transactional
+    public int insert(RefreshTokenDTO value) {
+        return store.insert(RefreshTokenEntity.class, value, Map.of());
     }
 
-    @Override
-    public RefreshTokenDTO selectByTokenId(String tokenId) {
-        return sqlSession.selectOne(NAMESPACE + ".selectByTokenId", tokenId);
+    public RefreshTokenDTO selectByTokenId(String id) {
+        return store.one(
+                RefreshTokenEntity.class,
+                RefreshTokenDTO.class,
+                "where e.tokenId=:id",
+                params("id", id));
     }
 
-    @Override
-    public int deleteByTokenId(String tokenId) {
-        return sqlSession.delete(NAMESPACE + ".deleteByTokenId", tokenId);
+    @Transactional
+    public int deleteByTokenId(String id) {
+        return store.modify(
+                "delete from RefreshTokenEntity e where e.tokenId=:id", params("id", id));
     }
 
-    @Override
+    @Transactional
     public int deleteExpired() {
-        return sqlSession.delete(NAMESPACE + ".deleteExpired");
+        return store.modify(
+                "delete from RefreshTokenEntity e where e.expiresAt<=local datetime", Map.of());
     }
 }

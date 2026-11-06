@@ -1,51 +1,68 @@
 package com.provit.dao.community.impl;
 
+import static com.provit.persistence.JpaQueries.*;
+import static com.provit.persistence.JpaStore.params;
+
 import com.provit.dao.community.CommentDAO;
 import com.provit.dto.community.CommentDTO;
-import org.apache.ibatis.session.SqlSession;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
+import com.provit.persistence.*;
+import com.provit.persistence.entity.*;
 
-import java.util.List;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.*;
+import java.util.*;
 
 @Repository
+@Transactional(readOnly = true)
 public class CommentDAOImpl implements CommentDAO {
+    private final JpaStore store;
 
-    private final SqlSession sqlSession;
-    private static final String NAMESPACE = "com.provit.dao.community.CommentDAO.";
-
-    @Autowired
-    public CommentDAOImpl(SqlSession sqlSession) {
-        this.sqlSession = sqlSession;
+    public CommentDAOImpl(JpaStore store) {
+        this.store = store;
     }
 
-    @Override
     public List<CommentDTO> selectCommentList(Long postNum) {
-        return sqlSession.selectList(NAMESPACE + "selectCommentList", postNum);
+        return store.nativeList(COMMENT_LIST, CommentDTO.class, params("postNum", postNum));
     }
 
-    @Override
     public List<CommentDTO> selectMyCommentList(Long userNum) {
-        return sqlSession.selectList(NAMESPACE + "selectMyCommentList", userNum);
+        return store.nativeList(COMMENT_MY_LIST, CommentDTO.class, params("value", userNum));
     }
 
-    @Override
-    public CommentDTO selectCommentDetail(Long commentNum) {
-        return sqlSession.selectOne(NAMESPACE + "selectCommentDetail", commentNum);
+    public CommentDTO selectCommentDetail(Long id) {
+        return store.one(
+                CommentEntity.class, CommentDTO.class, "where e.commentNum=:id", params("id", id));
     }
 
-    @Override
-    public int insertComment(CommentDTO commentDto) {
-        return sqlSession.insert(NAMESPACE + "insertComment", commentDto);
+    @Transactional
+    public int insertComment(CommentDTO value) {
+        return store.insert(
+                CommentEntity.class, value, Map.of(), Set.of("commentDate", "isDeleted"));
     }
 
-    @Override
-    public int updateComment(CommentDTO commentDto) {
-        return sqlSession.update(NAMESPACE + "updateComment", commentDto);
+    @Transactional
+    public int updateComment(CommentDTO value) {
+        return store.modify(
+                "update CommentEntity e set e.commentContent=:content,e.commentDate=local datetime"
+                        + " where e.commentNum=:id and e.userNum=:user and e.isDeleted=0",
+                params(
+                        "id",
+                        value.getCommentNum(),
+                        "user",
+                        value.getUserNum(),
+                        "content",
+                        value.getCommentContent()));
     }
 
-    @Override
-    public int deleteComment(java.util.Map<String, Object> params) {
-        return sqlSession.delete(NAMESPACE + "deleteComment", params);
+    @Transactional
+    public int deleteComment(Map<String, Object> values) {
+        String owner = "ADMIN".equals(values.get("userType")) ? "" : " and e.userNum=:user";
+        return store.modify(
+                "update CommentEntity e set e.isDeleted=1,e.commentContent='삭제된 댓글입니다.' where"
+                        + " e.commentNum=:id and e.isDeleted=0"
+                        + owner,
+                params("id", values.get("commentNum"), "user", values.get("userNum")));
     }
 }

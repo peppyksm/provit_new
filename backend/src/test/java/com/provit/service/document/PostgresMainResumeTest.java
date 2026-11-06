@@ -9,17 +9,11 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import org.apache.ibatis.builder.xml.XMLMapperBuilder;
-import org.apache.ibatis.mapping.Environment;
-import org.apache.ibatis.session.Configuration;
-import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.junit.*;
 import org.junit.rules.TestName;
-import org.mybatis.spring.SqlSessionTemplate;
-import org.mybatis.spring.transaction.SpringManagedTransactionFactory;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -47,10 +41,9 @@ public class PostgresMainResumeTest {
     private final List<String> tables = new ArrayList<>();
     private Connection connection;
     private com.provit.support.PostgresTestDatabase database;
-    private SqlSessionTemplate session;
     private MainResumeDAO dao;
     private MainResumeService service;
-    private DataSourceTransactionManager transactions;
+    private JpaTransactionManager transactions;
 
     @Before
     public void setup() throws Exception {
@@ -66,9 +59,8 @@ public class PostgresMainResumeTest {
         execute("INSERT INTO T_RESUME (RESUME_NUM,USER_NUM,RESUME_TITLE,HIGHEST_LEVEL,OCCUPATION_CODE,JOB_CODE) VALUES (11,7,'first','대학교','2','84')");
         execute("INSERT INTO T_RESUME (RESUME_NUM,USER_NUM,RESUME_TITLE,HIGHEST_LEVEL) VALUES (3000000000,7,'second','대학교')");
         execute("INSERT INTO T_RESUME (RESUME_NUM,USER_NUM,RESUME_TITLE,HIGHEST_LEVEL) VALUES (22,8,'private','대학교')");
-        session = database.session;
-        dao = new MainResumeDAOImpl(session);
-        transactions = new DataSourceTransactionManager(source);
+        dao = database.mainResume;
+        transactions = database.transactions;
         service = transactional(dao);
     }
 
@@ -81,7 +73,7 @@ public class PostgresMainResumeTest {
     public void authenticatedApiPersistsOnlyOwnedResumeAndReturnsJobCodes() throws Exception {
         UserDAO users = (UserDAO) java.lang.reflect.Proxy.newProxyInstance(UserDAO.class.getClassLoader(),
                 new Class<?>[] { UserDAO.class }, (proxy, method, args) ->
-                    session.selectOne("com.provit.mapper.UserMapper.selectByUserNum", args[0]));
+                    database.users.selectByUserNum(((Number)args[0]).longValue()));
         var jwt = new JwtProvider(users);
         ReflectionTestUtils.setField(jwt, "secretKeyPlain", "main-resume-postgres-test-key-32-bytes-long");
         ReflectionTestUtils.setField(jwt, "expirationTime", 60_000L);
@@ -136,7 +128,7 @@ public class PostgresMainResumeTest {
         assertEquals("84", result.getJobCode());
         assertEquals("IT개발·데이터", result.getOccupationName());
         assertEquals("백엔드/서버개발", result.getJobName());
-        UserDTO user = session.selectOne("com.provit.mapper.UserMapper.selectByUserNum", 7L);
+        UserDTO user = database.users.selectByUserNum(7L);
         assertEquals(Long.valueOf(11), storedMainResumeNum());
         assertNull(user.getJobCode());
         execute("UPDATE T_RESUME SET RESUME_TITLE='edited', JOB_CODE=NULL WHERE RESUME_NUM=11");

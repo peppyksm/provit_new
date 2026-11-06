@@ -11,7 +11,8 @@
 | **Backend**         | Spring Boot            | **4.1.2** (Spring Framework 7.0.10)            |
 | **WAS**             | 내장 Apache Tomcat     | **11.0.x**, 별도 설치 없이 실행                |
 | **Java**            | OpenJDK / Oracle JDK   | **JDK 17**                                    |
-| **Database**        | PostgreSQL             | **18**, pgJDBC, MyBatis, HikariCP             |
+| **Database**        | PostgreSQL             | **18**, pgJDBC, HikariCP                      |
+| **Persistence**     | JPA / Hibernate ORM    | Entity·JPQL·네이티브 쿼리, JPA 트랜잭션       |
 | **Build**           | Gradle Wrapper         | **8.14.3**, 실행 가능한 JAR                   |
 | **Backend IDE**     | Eclipse / STS / IntelliJ | Gradle 프로젝트                           |
 | **Frontend**        | React 19 + Vite        | JavaScript, Axios, React Router, Lucide Icons |
@@ -71,6 +72,7 @@ Java 17로 빌드합니다. `JAVA_HOME`을 JDK 17로 지정하고, 저장소에 
    - 테스트 보고서: `backend/build/reports/tests/test/index.html`
    - 기본 테스트는 실제 외부 사주 API 호출 테스트 2개 클래스를 제외합니다. PostgreSQL 통합 검증은 `.\gradlew.bat "-Dprovit.postgres.tests=true" test`로 활성화합니다.
    - 새 DB 구성·기준정보·접속 설정은 [PostgreSQL 전환 안내](docs/postgresql-migration.md)를 참고하세요.
+   - 저장 계층과 트랜잭션 구성은 [JPA 전환 안내](docs/jpa-migration.md)를 참고하세요. 시작할 때 기존 스키마를 검증하며 테이블을 자동 변경하지 않습니다.
 
 4. **서버 시작** (`backend` 폴더에서):
 

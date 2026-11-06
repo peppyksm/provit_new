@@ -96,8 +96,7 @@ public class DocumentReviewServiceImpl implements DocumentReviewService {
 		} catch (DataAccessException exception) {
 			if (!isDuplicateKeyViolation(exception))
 				throw exception;
-			// NOT_SUPPORTED can still bind a MyBatis session with the first empty
-			// lookup cached. Read after rollback in a fresh transaction/session.
+			// Read after the failed reservation rolls back, in a fresh persistence context.
 			existing = transaction.execute(status -> reviewDAO.selectByRequestId(userNum, requestId));
 			if (existing == null)
 				throw exception;

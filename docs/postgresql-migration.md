@@ -1,5 +1,7 @@
 # Oracle → PostgreSQL 전환
 
+> 이 문서는 PostgreSQL 전환 당시의 MyBatis 구성과 검증 기록을 포함한다. 현재 저장 계층은 JPA이며 [JPA 전환 안내](jpa-migration.md)를 따른다.
+
 ## 현재 상태
 
 2026-11-05에 설치된 PostgreSQL 18 서버(`127.0.0.1:5432`)에 앱 전용 로그인 역할 `provit`과 데이터베이스 `provit_new`를 새로 만들었다. 사용자의 선택에 따라 기존 Oracle 업무 데이터는 이관하지 않았으며 Oracle DB·계정·데이터는 수정하지 않았다.

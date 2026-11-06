@@ -1,73 +1,119 @@
 package com.provit.dao.auth.impl;
 
-import org.apache.ibatis.session.SqlSession;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
+import static com.provit.persistence.JpaQueries.*;
+import static com.provit.persistence.JpaStore.params;
 
 import com.provit.dao.auth.UserDAO;
 import com.provit.dto.auth.UserDTO;
+import com.provit.persistence.*;
+import com.provit.persistence.entity.*;
+
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.*;
+import java.util.*;
 
 @Repository
+@Transactional(readOnly = true)
 public class UserDAOImpl implements UserDAO {
+    private final JpaStore store;
 
-    private static final String NAMESPACE = "com.provit.mapper.UserMapper";
-
-    private final SqlSession sqlSession;
-
-    @Autowired
-    public UserDAOImpl(SqlSession sqlSession) {
-        this.sqlSession = sqlSession;
+    public UserDAOImpl(JpaStore store) {
+        this.store = store;
     }
 
-    @Override
-    public UserDTO selectByEmail(String userEmail) {
-        return sqlSession.selectOne(NAMESPACE + ".selectByEmail", userEmail);
+    public UserDTO selectByEmail(String email) {
+        return store.one(
+                UserEntity.class,
+                UserDTO.class,
+                "where e.userEmail=:email",
+                params("email", email));
     }
 
-    @Override
-    public UserDTO selectByNickname(String userNickname) {
-        return sqlSession.selectOne(NAMESPACE + ".selectByNickname", userNickname);
+    public UserDTO selectByNickname(String nickname) {
+        return store.one(
+                UserEntity.class,
+                UserDTO.class,
+                "where e.userNickname=:nickname and e.userIsDeleted=0",
+                params("nickname", nickname));
     }
 
-    @Override
-    public UserDTO selectByUserNum(Long userNum) {
-        return sqlSession.selectOne(NAMESPACE + ".selectByUserNum", userNum);
+    public UserDTO selectByUserNum(Long id) {
+        return store.one(
+                UserEntity.class,
+                UserDTO.class,
+                "where e.userNum=:id",
+                params("id", Math.toIntExact(id)));
     }
 
-    @Override
-    public int countByEmail(String userEmail) {
-        Integer count = sqlSession.selectOne(NAMESPACE + ".countByEmail", userEmail);
-        return count != null ? count : 0;
+    public int countByEmail(String email) {
+        return Math.toIntExact(
+                store.count(UserEntity.class, "where e.userEmail=:email", params("email", email)));
     }
 
-    @Override
-    public int countByNickname(String userNickname) {
-        Integer count = sqlSession.selectOne(NAMESPACE + ".countByNickname", userNickname);
-        return count != null ? count : 0;
+    public int countByNickname(String nickname) {
+        return Math.toIntExact(
+                store.count(
+                        UserEntity.class,
+                        "where e.userNickname=:nickname and e.userIsDeleted=0",
+                        params("nickname", nickname)));
     }
 
-    @Override
-    public int insertUser(UserDTO userDTO) {
-        return sqlSession.insert(NAMESPACE + ".insertUser", userDTO);
+    @Transactional
+    public int insertUser(UserDTO value) {
+        return store.insert(
+                UserEntity.class,
+                value,
+                Map.of(),
+                Set.of(
+                        "userRegisterDate",
+                        "userIsDeleted",
+                        "userTokenVersion",
+                        "blockedDate",
+                        "mainResumeNum"));
     }
 
-    @Override
-    public int updateMyProfile(UserDTO userDTO) {
-        return sqlSession.update(NAMESPACE + ".updateMyProfile", userDTO);
+    @Transactional
+    public int updateMyProfile(UserDTO value) {
+        Map<String, Object> changes = new LinkedHashMap<>();
+        if (value.getUserNickname() != null) changes.put("userNickname", value.getUserNickname());
+        if (value.getUserPw() != null) changes.put("userPw", value.getUserPw());
+        if (changes.isEmpty()) return 0;
+        String assignments =
+                changes.keySet().stream()
+                        .map(name -> "e." + name + "=:" + name)
+                        .collect(java.util.stream.Collectors.joining(","));
+        changes.put("id", Math.toIntExact(value.getUserNum()));
+        return store.modify(
+                "update UserEntity e set "
+                        + assignments
+                        + " where e.userNum=:id and e.userIsDeleted=0",
+                changes);
     }
 
-    @Override
-    public int updatePasswordByEmail(UserDTO userDTO) {
-        return sqlSession.update(NAMESPACE + ".updatePasswordByEmail", userDTO);
+    @Transactional
+    public int updatePasswordByEmail(UserDTO value) {
+        return store.patch(
+                UserEntity.class,
+                "where e.userEmail=:email and e.userIsDeleted=0",
+                params("email", value.getUserEmail()),
+                params("userPw", value.getUserPw()));
     }
 
-    @Override
-    public int incrementTokenVersion(Long userNum) {
-        return sqlSession.update(NAMESPACE + ".incrementTokenVersion", userNum);
+    @Transactional
+    public int incrementTokenVersion(Long id) {
+        return store.modify(
+                "update UserEntity e set e.userTokenVersion=e.userTokenVersion+1 where"
+                        + " e.userNum=:id and e.userIsDeleted=0",
+                params("id", Math.toIntExact(id)));
     }
 
-    @Override
-    public int withdrawMyAccount(Long userNum) {
-        return sqlSession.update(NAMESPACE + ".withdrawMyAccount", userNum);
+    @Transactional
+    public int withdrawMyAccount(Long id) {
+        return store.modify(
+                "update UserEntity e set e.userIsDeleted=1,e.userTokenVersion=e.userTokenVersion+1"
+                        + " where e.userNum=:id and e.userIsDeleted=0",
+                params("id", Math.toIntExact(id)));
     }
 }

@@ -11,7 +11,7 @@ import java.util.UUID;
 
 import jakarta.annotation.PostConstruct;
 
-import org.mybatis.spring.SqlSessionTemplate;
+import com.provit.dao.FileOwnershipDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     private static final Logger log = LoggerFactory.getLogger(FileUploadServiceImpl.class);
 
-    private final SqlSessionTemplate sqlSessionTemplate;
+    private final FileOwnershipDAO fileOwnershipDAO;
 
     /**
      * 파일 저장 최상위 공통 루트 디렉토리
@@ -38,8 +38,8 @@ public class FileUploadServiceImpl implements FileUploadService {
     private String baseUploadDir;
 
     @Autowired
-    public FileUploadServiceImpl(SqlSessionTemplate sqlSessionTemplate) {
-        this.sqlSessionTemplate = sqlSessionTemplate;
+    public FileUploadServiceImpl(FileOwnershipDAO fileOwnershipDAO) {
+        this.fileOwnershipDAO = fileOwnershipDAO;
     }
 
     /**
@@ -188,16 +188,14 @@ public class FileUploadServiceImpl implements FileUploadService {
                     throw new SecurityException("본인의 프로필 사진만 업로드하거나 삭제할 수 있습니다. (요청 회원: " + userNum + ", 대상: " + targetId + ")");
                 }
                 // 2. 실제 유효한(미탈퇴) 회원인지 DB 검증
-                Integer count = sqlSessionTemplate.selectOne(
-                        "com.provit.mapper.file.FileMapper.selectUserExists", targetId);
+                Integer count = fileOwnershipDAO.activeUserCount(targetId);
                 if (count == null || count <= 0) {
                     throw new IllegalArgumentException("존재하지 않거나 탈퇴 처리된 회원입니다: " + targetId);
                 }
             }
             case PORTFOLIO -> {
                 // 1. DB에서 해당 포트폴리오 존재 여부 및 소유자 조회
-                Integer ownerNum = sqlSessionTemplate.selectOne(
-                        "com.provit.mapper.file.FileMapper.selectPortfolioOwner", targetId);
+                Integer ownerNum = fileOwnershipDAO.portfolioOwner(targetId);
                 if (ownerNum == null) {
                     throw new IllegalArgumentException("존재하지 않는 포트폴리오 번호입니다: " + targetId);
                 }
@@ -208,8 +206,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             }
             case POST -> {
                 // 1. DB에서 해당 게시글 존재 여부 및 작성자 조회
-                Integer writerNum = sqlSessionTemplate.selectOne(
-                        "com.provit.mapper.file.FileMapper.selectPostOwner", targetId);
+                Integer writerNum = fileOwnershipDAO.postOwner(targetId);
                 if (writerNum == null) {
                     throw new IllegalArgumentException("존재하지 않는 게시글 번호입니다: " + targetId);
                 }

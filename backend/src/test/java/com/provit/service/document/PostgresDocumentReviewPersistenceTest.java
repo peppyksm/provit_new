@@ -25,24 +25,15 @@ import java.util.regex.Pattern;
 
 import jakarta.servlet.http.Cookie;
 
-import org.apache.ibatis.builder.xml.XMLMapperBuilder;
-import org.apache.ibatis.mapping.Environment;
-import org.apache.ibatis.session.Configuration;
-import org.apache.ibatis.session.ExecutorType;
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
-import org.mybatis.spring.MyBatisExceptionTranslator;
-import org.mybatis.spring.SqlSessionTemplate;
-import org.mybatis.spring.transaction.SpringManagedTransactionFactory;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.jdbc.support.SQLStateSQLExceptionTranslator;
@@ -79,8 +70,7 @@ public class PostgresDocumentReviewPersistenceTest {
 	private DocumentReviewDAO dao;
 	private DocumentReviewService service;
 	private DocumentService documents;
-	private DataSourceTransactionManager transactionManager;
-	private SqlSessionFactory sessionFactory;
+	private JpaTransactionManager transactionManager;
 	private ResumeDetailDTO resume;
 	private byte[] pdf = "%PDF-1.7\nportfolio snapshot".getBytes(StandardCharsets.US_ASCII);
 	private boolean documentsDeleted;
@@ -97,9 +87,8 @@ public class PostgresDocumentReviewPersistenceTest {
                     + "(USER_NUM, USER_NAME, USER_NICKNAME, USER_EMAIL, USER_PW) VALUES (" + user
                     + ", 'test', 'user" + user + "', 'review" + user + "@example.invalid', 'placeholder')");
         }
-        sessionFactory = database.factory;
-        dao = new DocumentReviewDAOImpl(new SqlSessionTemplate(sessionFactory));
-		transactionManager = new DataSourceTransactionManager(dataSource);
+        dao = database.reviews;
+        transactionManager = database.transactions;
 		transaction = new TransactionTemplate(transactionManager);
 		resume = new ResumeDetailDTO();
 		var resumeInfo = new ResumeDTO();
@@ -325,13 +314,9 @@ public class PostgresDocumentReviewPersistenceTest {
 	}
 
 	@Test
-	public void concurrentRequestsAlsoReuseRecordWithSqlStateExceptionTranslation() throws Exception {
-		// Exercise the real PostgreSQL 23505 error through the SQL-state translator.
-		var translator = new MyBatisExceptionTranslator(SQLStateSQLExceptionTranslator::new, true);
-		var fallbackDAO = new DocumentReviewDAOImpl(
-				new SqlSessionTemplate(sessionFactory, ExecutorType.SIMPLE, translator));
-		assertConcurrentAuthenticatedRequests(fallbackDAO);
-	}
+    public void generatedSequenceIdsDoNotCollideAcrossConcurrentReservations() throws Exception {
+        assertConcurrentAuthenticatedRequests(dao);
+    }
 
 	private void assertConcurrentAuthenticatedRequests(DocumentReviewDAO concurrentDAO) throws Exception {
 		var initialLookups = new java.util.concurrent.atomic.AtomicInteger();
@@ -427,8 +412,9 @@ public class PostgresDocumentReviewPersistenceTest {
 
 		var duplicate = new DocumentReviewDTO();
 		org.springframework.beans.BeanUtils.copyProperties(first, duplicate);
-		assertThrows(org.springframework.dao.DuplicateKeyException.class,
+		var violation = assertThrows(org.springframework.dao.DataIntegrityViolationException.class,
 				() -> transaction.executeWithoutResult(status -> dao.insertReview(duplicate)));
+		assertEquals("23505", ((java.sql.SQLException) violation.getMostSpecificCause()).getSQLState());
 		for (int i = 0; i < 2; i++) {
 			var legacy = new DocumentReviewDTO();
 			org.springframework.beans.BeanUtils.copyProperties(first, legacy);

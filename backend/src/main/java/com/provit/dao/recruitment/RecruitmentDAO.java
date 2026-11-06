@@ -1,12 +1,12 @@
 package com.provit.dao.recruitment;
 
-import java.util.List;
 import com.provit.dto.recruitment.JobDTO;
 import com.provit.dto.recruitment.OccupationDTO;
 import com.provit.dto.recruitment.RecruitmentDTO;
 import com.provit.dto.recruitment.RecruitmentSearchDTO;
-
 import com.provit.dto.user.UserJobPreferenceDTO;
+
+import java.util.List;
 
 public interface RecruitmentDAO {
 
@@ -32,7 +32,8 @@ public interface RecruitmentDAO {
 
     public UserJobPreferenceDTO selectUserJobPreference(long userNum);
 
-    public List<RecruitmentDTO> selectRecruitmentsByKeyword(String keyword, Long userNum, int limit);
+    public List<RecruitmentDTO> selectRecruitmentsByKeyword(
+            String keyword, Long userNum, int limit);
 
     public List<RecruitmentDTO> selectHotRecruitments(Long userNum, int limit);
 }

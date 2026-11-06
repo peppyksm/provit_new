@@ -108,7 +108,7 @@ public class PostServiceImpl implements PostService {
     @org.springframework.transaction.annotation.Transactional
     public Long createPost(PostDTO postDto) {
         validatePostContentLength(postDto);
-        // DB에 삽입 (MyBatis selectKey 기능으로 postDto에 생성된 PK가 담김)
+        // JPA 시퀀스로 발급된 식별자를 DTO에 반영한다.
         postDao.insertPost(postDto);
         return postDto.getPostNum();
     }

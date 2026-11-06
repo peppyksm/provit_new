@@ -1,180 +1,232 @@
 package com.provit.dao.document.impl;
 
-import java.util.List;
-import java.util.Map;
-
-import org.apache.ibatis.session.SqlSession;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
+import static com.provit.persistence.JpaQueries.*;
+import static com.provit.persistence.JpaStore.params;
 
 import com.provit.dao.document.DocumentDAO;
-import com.provit.dto.document.CareerDTO;
-import com.provit.dto.document.CertificationDTO;
-import com.provit.dto.document.CoverLetterDTO;
-import com.provit.dto.document.DocumentSummaryDTO;
-import com.provit.dto.document.EducationDTO;
-import com.provit.dto.document.PortfolioDTO;
-import com.provit.dto.document.ResumeDTO;
+import com.provit.dto.document.*;
+import com.provit.persistence.*;
+import com.provit.persistence.entity.*;
+
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.*;
+import java.util.*;
 
 @Repository
+@Transactional(readOnly = true)
 public class DocumentDAOImpl implements DocumentDAO {
+    private final JpaStore store;
 
-    private static final String RESUME_NAMESPACE = "com.provit.mapper.document.ResumeMapper";
-    private static final String PORTFOLIO_NAMESPACE = "com.provit.mapper.document.PortfolioMapper";
-    private static final String COVER_LETTER_NAMESPACE = "com.provit.mapper.document.CoverLetterMapper";
-
-    private final SqlSession sqlSession;
-
-    @Autowired
-    public DocumentDAOImpl(SqlSession sqlSession) {
-        this.sqlSession = sqlSession;
+    public DocumentDAOImpl(JpaStore store) {
+        this.store = store;
     }
 
-    @Override
-    public int insertResume(ResumeDTO resume) {
-        return sqlSession.insert(RESUME_NAMESPACE + ".insertResume", resume);
-    }
-
-    @Override
     public ResumeDTO selectResumeJob(String occupationCode, String jobCode) {
-        return sqlSession.selectOne(RESUME_NAMESPACE + ".selectResumeJob",
-                Map.of("occupationCode", occupationCode, "jobCode", jobCode));
+        return store.nativeOne(
+                RESUME_JOB,
+                ResumeDTO.class,
+                params("occupationCode", occupationCode, "jobCode", jobCode));
     }
 
-    @Override
-    public int insertEducation(EducationDTO education) {
-        return sqlSession.insert(RESUME_NAMESPACE + ".insertEducation", education);
-    }
-
-    @Override
-    public int insertCareer(CareerDTO career) {
-        return sqlSession.insert(RESUME_NAMESPACE + ".insertCareer", career);
-    }
-
-    @Override
-    public int insertCertification(CertificationDTO certification) {
-        return sqlSession.insert(RESUME_NAMESPACE + ".insertCertification", certification);
-    }
-
-    @Override
+    @Transactional
     public int selectNextPortfolioNum() {
-        Integer portfolioNum = sqlSession.selectOne(PORTFOLIO_NAMESPACE + ".selectNextPortfolioNum");
-        if (portfolioNum == null) {
-            throw new IllegalStateException("포트폴리오 번호를 발급하지 못했습니다.");
-        }
-        return portfolioNum;
+        return store.scalar("select nextval('seq_t_portfolio')", Integer.class, Map.of());
     }
 
-    @Override
-    public int insertPortfolio(PortfolioDTO portfolio) {
-        return sqlSession.insert(PORTFOLIO_NAMESPACE + ".insertPortfolio", portfolio);
+    @Transactional
+    public int insertResume(ResumeDTO value) {
+        return store.insert(ResumeEntity.class, value, Map.of(), Set.of("createdAt", "updatedAt"));
     }
 
-    @Override
-    public int insertCoverLetter(CoverLetterDTO coverLetter) {
-        return sqlSession.insert(COVER_LETTER_NAMESPACE + ".insertCoverLetter", coverLetter);
+    @Transactional
+    public int insertEducation(EducationDTO value) {
+        return store.insert(EducationEntity.class, value, Map.of());
     }
 
-    @Override
-    public int updateResume(ResumeDTO resume) {
-        return sqlSession.update(RESUME_NAMESPACE + ".updateResume", resume);
+    @Transactional
+    public int insertCareer(CareerDTO value) {
+        return store.insert(CareerEntity.class, value, Map.of());
     }
 
-    @Override
+    @Transactional
+    public int insertCertification(CertificationDTO value) {
+        return store.insert(CertificationEntity.class, value, Map.of());
+    }
+
+    @Transactional
+    public int insertPortfolio(PortfolioDTO value) {
+        return store.insert(
+                PortfolioEntity.class, value, Map.of(), Set.of("createdAt", "updatedAt"));
+    }
+
+    @Transactional
+    public int insertCoverLetter(CoverLetterDTO value) {
+        return store.insert(
+                CoverLetterEntity.class, value, Map.of(), Set.of("createdAt", "updatedAt"));
+    }
+
+    @Transactional
+    public int updateResume(ResumeDTO value) {
+        return store.patch(
+                ResumeEntity.class,
+                "where e.resumeNum=:id and e.userNum=:user",
+                params("id", (long) value.getResumeNum(), "user", value.getUserNum()),
+                params(
+                        "resumeTitle",
+                        value.getResumeTitle(),
+                        "occupationCode",
+                        value.getOccupationCode(),
+                        "jobCode",
+                        value.getJobCode(),
+                        "highestLevel",
+                        value.getHighestLevel(),
+                        "motivation",
+                        value.getMotivation(),
+                        "desiredLocation",
+                        value.getDesiredLocation(),
+                        "desiredWorkType",
+                        value.getDesiredWorkType()));
+    }
+
+    @Transactional
+    public int updateCoverLetter(CoverLetterDTO value) {
+        return store.patch(
+                CoverLetterEntity.class,
+                "where e.letterNum=:id and e.userNum=:user",
+                params("id", (long) value.getLetterNum(), "user", value.getUserNum()),
+                params(
+                        "coverLetterTitle",
+                        value.getCoverLetterTitle(),
+                        "growthProcess",
+                        value.getGrowthProcess(),
+                        "personalityStrengthsWeaknesses",
+                        value.getPersonalityStrengthsWeaknesses(),
+                        "problemSolvingExperience",
+                        value.getProblemSolvingExperience(),
+                        "postJoiningAspiration",
+                        value.getPostJoiningAspiration()));
+    }
+
+    @Transactional
     public int deleteEducationList(int resumeNum) {
-        return sqlSession.delete(RESUME_NAMESPACE + ".deleteEducationList", resumeNum);
+        return store.modify(
+                "delete from EducationEntity e where e.resumeNum=:id",
+                params("id", (long) resumeNum));
     }
 
-    @Override
+    @Transactional
     public int deleteCareerList(int resumeNum) {
-        return sqlSession.delete(RESUME_NAMESPACE + ".deleteCareerList", resumeNum);
+        return store.modify(
+                "delete from CareerEntity e where e.resumeNum=:id", params("id", (long) resumeNum));
     }
 
-    @Override
+    @Transactional
     public int deleteCertificationList(int resumeNum) {
-        return sqlSession.delete(RESUME_NAMESPACE + ".deleteCertificationList", resumeNum);
+        return store.modify(
+                "delete from CertificationEntity e where e.resumeNum=:id",
+                params("id", (long) resumeNum));
     }
 
-    @Override
-    public int updateCoverLetter(CoverLetterDTO coverLetter) {
-        return sqlSession.update(COVER_LETTER_NAMESPACE + ".updateCoverLetter", coverLetter);
+    @Transactional
+    public int deleteResume(int userNum, int id) {
+        return store.modify(
+                "delete from ResumeEntity e where e.resumeNum=:id and e.userNum=:user",
+                params("id", (long) id, "user", userNum));
     }
 
-    @Override
-    public int deleteResume(int userNum, int resumeNum) {
-        return sqlSession.delete(
-                RESUME_NAMESPACE + ".deleteResume",
-                Map.of("userNum", userNum, "resumeNum", resumeNum));
+    @Transactional
+    public int deleteCoverLetter(int userNum, int id) {
+        return store.modify(
+                "delete from CoverLetterEntity e where e.letterNum=:id and e.userNum=:user",
+                params("id", (long) id, "user", userNum));
     }
 
-    @Override
-    public int deleteCoverLetter(int userNum, int letterNum) {
-        return sqlSession.delete(
-                COVER_LETTER_NAMESPACE + ".deleteCoverLetter",
-                Map.of("userNum", userNum, "letterNum", letterNum));
+    @Transactional
+    public int deletePortfolio(int userNum, int id) {
+        return store.modify(
+                "delete from PortfolioEntity e where e.portfolioNum=:id and e.userNum=:user",
+                params("id", (long) id, "user", userNum));
     }
 
-    @Override
-    public int deletePortfolio(int userNum, int portfolioNum) {
-        return sqlSession.delete(
-                PORTFOLIO_NAMESPACE + ".deletePortfolio",
-                Map.of("userNum", userNum, "portfolioNum", portfolioNum));
-    }
-
-    @Override
     public ResumeDTO selectResume(int userNum, int resumeNum) {
-        return sqlSession.selectOne(
-                RESUME_NAMESPACE + ".selectResume",
-                Map.of("userNum", userNum, "resumeNum", resumeNum));
+        return store.nativeOne(
+                RESUME_DETAIL, ResumeDTO.class, params("userNum", userNum, "resumeNum", resumeNum));
     }
 
-    @Override
-    public List<EducationDTO> selectEducationList(int resumeNum) {
-        return sqlSession.selectList(RESUME_NAMESPACE + ".selectEducationList", resumeNum);
+    public CoverLetterDTO selectCoverLetter(int userNum, int id) {
+        return store.one(
+                CoverLetterEntity.class,
+                CoverLetterDTO.class,
+                "where e.letterNum=:id and e.userNum=:user",
+                params("id", (long) id, "user", userNum));
     }
 
-    @Override
-    public List<CareerDTO> selectCareerList(int resumeNum) {
-        return sqlSession.selectList(RESUME_NAMESPACE + ".selectCareerList", resumeNum);
+    public PortfolioDTO selectPortfolio(int userNum, int id) {
+        return store.one(
+                PortfolioEntity.class,
+                PortfolioDTO.class,
+                "where e.portfolioNum=:id and e.userNum=:user",
+                params("id", (long) id, "user", userNum));
     }
 
-    @Override
-    public List<CertificationDTO> selectCertificationList(int resumeNum) {
-        return sqlSession.selectList(RESUME_NAMESPACE + ".selectCertificationList", resumeNum);
+    public PortfolioDTO selectPortfolioByPortfolioNum(int id) {
+        return store.one(
+                PortfolioEntity.class,
+                PortfolioDTO.class,
+                "where e.portfolioNum=:id",
+                params("id", (long) id));
     }
 
-    @Override
-    public CoverLetterDTO selectCoverLetter(int userNum, int letterNum) {
-        return sqlSession.selectOne(
-                COVER_LETTER_NAMESPACE + ".selectCoverLetter",
-                Map.of("userNum", userNum, "letterNum", letterNum));
+    public List<EducationDTO> selectEducationList(int id) {
+        return store.list(
+                EducationEntity.class,
+                EducationDTO.class,
+                "where e.resumeNum=:id order by e.admissionDate desc,e.eduNum desc",
+                params("id", (long) id));
     }
 
-    @Override
-    public PortfolioDTO selectPortfolio(int userNum, int portfolioNum) {
-        return sqlSession.selectOne(
-                PORTFOLIO_NAMESPACE + ".selectPortfolio",
-                Map.of("userNum", userNum, "portfolioNum", portfolioNum));
+    public List<CareerDTO> selectCareerList(int id) {
+        return store.list(
+                CareerEntity.class,
+                CareerDTO.class,
+                "where e.resumeNum=:id order by e.joinDate desc,e.careerNum desc",
+                params("id", (long) id));
     }
 
-    @Override
-    public PortfolioDTO selectPortfolioByPortfolioNum(int portfolioNum) {
-        return sqlSession.selectOne(PORTFOLIO_NAMESPACE + ".selectPortfolioByPortfolioNum", portfolioNum);
+    public List<CertificationDTO> selectCertificationList(int id) {
+        return store.list(
+                CertificationEntity.class,
+                CertificationDTO.class,
+                "where e.resumeNum=:id order by e.issueDate desc,e.certNum desc",
+                params("id", (long) id));
     }
 
-    @Override
-    public List<DocumentSummaryDTO> selectResumeSummaryList(int userNum) {
-        return sqlSession.selectList(RESUME_NAMESPACE + ".selectResumeSummaryList", userNum);
+    public List<DocumentSummaryDTO> selectResumeSummaryList(int user) {
+        return store.project(
+                "select e.resumeNum as documentNum,e.resumeTitle as documentTitle,e.createdAt as"
+                    + " createdAt from ResumeEntity e where e.userNum=:user order by e.createdAt"
+                    + " desc,e.resumeNum desc",
+                DocumentSummaryDTO.class,
+                params("user", user));
     }
 
-    @Override
-    public List<DocumentSummaryDTO> selectCoverLetterSummaryList(int userNum) {
-        return sqlSession.selectList(
-                COVER_LETTER_NAMESPACE + ".selectCoverLetterSummaryList", userNum);
+    public List<DocumentSummaryDTO> selectCoverLetterSummaryList(int user) {
+        return store.project(
+                "select e.letterNum as documentNum,e.coverLetterTitle as documentTitle,e.createdAt"
+                        + " as createdAt from CoverLetterEntity e where e.userNum=:user order by"
+                        + " e.createdAt desc,e.letterNum desc",
+                DocumentSummaryDTO.class,
+                params("user", user));
     }
 
-    @Override
-    public List<DocumentSummaryDTO> selectPortfolioSummaryList(int userNum) {
-        return sqlSession.selectList(PORTFOLIO_NAMESPACE + ".selectPortfolioSummaryList", userNum);
+    public List<DocumentSummaryDTO> selectPortfolioSummaryList(int user) {
+        return store.project(
+                "select e.portfolioNum as documentNum,e.portfolioTitle as documentTitle,e.createdAt"
+                        + " as createdAt from PortfolioEntity e where e.userNum=:user order by"
+                        + " e.createdAt desc,e.portfolioNum desc",
+                DocumentSummaryDTO.class,
+                params("user", user));
     }
 }

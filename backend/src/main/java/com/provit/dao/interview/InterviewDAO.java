@@ -1,17 +1,17 @@
 package com.provit.dao.interview;
 
-import java.util.List;
-
-import com.provit.dto.interview.InterviewHistoryDTO;
-import com.provit.dto.interview.InterviewDocumentOptionDTO;
-import com.provit.dto.interview.InterviewResultDTO;
 import com.provit.dto.document.CareerDTO;
 import com.provit.dto.document.CertificationDTO;
 import com.provit.dto.document.CoverLetterDTO;
 import com.provit.dto.document.EducationDTO;
 import com.provit.dto.document.PortfolioDTO;
 import com.provit.dto.document.ResumeDTO;
+import com.provit.dto.interview.InterviewDocumentOptionDTO;
+import com.provit.dto.interview.InterviewHistoryDTO;
+import com.provit.dto.interview.InterviewResultDTO;
 import com.provit.dto.user.UserJobPreferenceDTO;
+
+import java.util.List;
 
 public interface InterviewDAO {
 
